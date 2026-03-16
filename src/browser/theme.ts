@@ -43,15 +43,20 @@ export const themeCSS = /* css */ `
   --vt-input-height: 24px;
   --vt-input-radius: 4px;
   --vt-panel-width: 260px;
+  --vt-panel-radius: 10px;
+  --vt-panel-margin: 8px;
   --vt-section-padding: 8px 12px;
   --vt-row-gap: 4px;
   --vt-icon-size: 16px;
   --vt-icon-size-sm: 12px;
   --vt-section-header-height: 28px;
+  --vt-tab-height: 32px;
+  --vt-toolbar-height: 32px;
 
   /* ── Shadows ── */
   --vt-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
   --vt-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --vt-shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
 
   /* ── Transitions ── */
   --vt-transition-fast: 120ms ease;

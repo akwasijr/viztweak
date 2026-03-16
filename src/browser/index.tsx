@@ -7,15 +7,21 @@ import React, {
 } from "react";
 import { Inspector } from "./Inspector.js";
 import { StylePanel } from "./StylePanel.js";
+import { LayerTree } from "./LayerTree.js";
+import { QuickActions } from "./QuickActions.js";
+import { StateSelector, type PseudoState } from "./StateSelector.js";
 import { DiffEngine } from "./DiffEngine.js";
 import { WSClient } from "./WSClient.js";
 import { resolveElement } from "./ElementResolver.js";
 import { ALL_EDITABLE_PROPERTIES } from "../shared/types.js";
 import type { ElementInfo, AgentStatusPayload } from "../shared/types.js";
 import { injectTheme, THEME_ATTR } from "./theme.js";
-import { IconInspect, IconClose, IconSend } from "./icons.js";
+import { IconInspect, IconClose, IconSend, IconDesign, IconLayers } from "./icons.js";
 
 // ─── Types ────────────────────────────────────────────────────
+
+type PanelTab = "design" | "layers";
+type PanelSide = "left" | "right";
 
 interface ChatMessage {
   id: string;
@@ -23,6 +29,12 @@ interface ChatMessage {
   from: "designer" | "agent";
   type?: "info" | "success" | "error" | "thinking";
   timestamp: number;
+}
+
+interface UndoEntry {
+  element: HTMLElement;
+  property: string;
+  previousValue: string;
 }
 
 // ─── Public API ───────────────────────────────────────────────
@@ -48,6 +60,12 @@ function VizTweakInner() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatExpanded, setChatExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<PanelTab>("design");
+  const [panelSide, setPanelSide] = useState<PanelSide>("right");
+  const [pseudoState, setPseudoState] = useState<PseudoState>("default");
+  const [copiedStyles, setCopiedStyles] = useState<Record<string, string> | null>(null);
+  const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
+  const [redoStack, setRedoStack] = useState<UndoEntry[]>([]);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLDivElement>(null);
@@ -99,13 +117,14 @@ function VizTweakInner() {
     }
   }, [messages]);
 
-  // Handle element selection
+  // Handle element selection (from inspector or layer tree)
   const handleSelect = useCallback(
     (el: HTMLElement) => {
       diffEngine.captureBaseline(el, ALL_EDITABLE_PROPERTIES);
       setSelectedElement(el);
       setElementInfo(resolveElement(el));
       setInspecting(false);
+      setPseudoState("default");
     },
     [diffEngine],
   );
@@ -113,6 +132,81 @@ function VizTweakInner() {
   const handleClose = useCallback(() => {
     setSelectedElement(null);
     setElementInfo(null);
+    setPseudoState("default");
+  }, []);
+
+  // ─── Quick Actions ────────────────────────────────────────
+
+  const handleUndo = useCallback(() => {
+    if (undoStack.length === 0) return;
+    const entry = undoStack[undoStack.length - 1];
+    const currentValue = entry.element.style.getPropertyValue(
+      entry.property.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
+    );
+    setRedoStack((prev) => [...prev, { ...entry, previousValue: currentValue }]);
+    entry.element.style.setProperty(
+      entry.property.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`),
+      entry.previousValue
+    );
+    setUndoStack((prev) => prev.slice(0, -1));
+  }, [undoStack]);
+
+  const handleRedo = useCallback(() => {
+    if (redoStack.length === 0) return;
+    const entry = redoStack[redoStack.length - 1];
+    const currentValue = entry.element.style.getPropertyValue(
+      entry.property.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
+    );
+    setUndoStack((prev) => [...prev, { ...entry, previousValue: currentValue }]);
+    entry.element.style.setProperty(
+      entry.property.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`),
+      entry.previousValue
+    );
+    setRedoStack((prev) => prev.slice(0, -1));
+  }, [redoStack]);
+
+  const handleReset = useCallback(() => {
+    if (!selectedElement) return;
+    diffEngine.clearBaseline(selectedElement);
+    // Remove all inline styles we may have set
+    for (const prop of ALL_EDITABLE_PROPERTIES) {
+      selectedElement.style.removeProperty(
+        prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
+      );
+    }
+    setUndoStack([]);
+    setRedoStack([]);
+    // Re-capture baseline
+    diffEngine.captureBaseline(selectedElement, ALL_EDITABLE_PROPERTIES);
+    setElementInfo(resolveElement(selectedElement));
+  }, [selectedElement, diffEngine]);
+
+  const handleCopyStyles = useCallback(() => {
+    if (!selectedElement) return;
+    const computed = window.getComputedStyle(selectedElement);
+    const styles: Record<string, string> = {};
+    for (const prop of ALL_EDITABLE_PROPERTIES) {
+      const cssName = prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+      styles[prop] = computed.getPropertyValue(cssName);
+    }
+    setCopiedStyles(styles);
+  }, [selectedElement]);
+
+  const handlePasteStyles = useCallback(() => {
+    if (!selectedElement || !copiedStyles) return;
+    for (const [prop, val] of Object.entries(copiedStyles)) {
+      if (!val) continue;
+      const cssName = prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+      const currentValue = selectedElement.style.getPropertyValue(cssName);
+      setUndoStack((prev) => [...prev, { element: selectedElement, property: prop, previousValue: currentValue || "" }]);
+      selectedElement.style.setProperty(cssName, val);
+    }
+    setRedoStack([]);
+    setElementInfo(resolveElement(selectedElement));
+  }, [selectedElement, copiedStyles]);
+
+  const handleToggleSide = useCallback(() => {
+    setPanelSide((prev) => (prev === "right" ? "left" : "right"));
   }, []);
 
   // Send chat message
@@ -136,7 +230,6 @@ function VizTweakInner() {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Don't capture shortcuts when typing in an input
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
@@ -148,7 +241,6 @@ function VizTweakInner() {
           setInspecting((prev) => !prev);
         }
       }
-      // V to enter inspect mode (when not editing)
       if (e.key === "v" && !e.ctrlKey && !e.metaKey && !e.altKey && !selectedElement) {
         setInspecting(true);
       }
@@ -159,10 +251,26 @@ function VizTweakInner() {
           setInspecting(false);
         }
       }
+      // Undo/Redo
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey && selectedElement) {
+        e.preventDefault();
+        handleUndo();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "z" && selectedElement) {
+        e.preventDefault();
+        handleRedo();
+      }
+      // Tab switch: 1 = Design, 2 = Layers
+      if (e.key === "1" && !e.ctrlKey && !e.metaKey && selectedElement) {
+        setActiveTab("design");
+      }
+      if (e.key === "2" && !e.ctrlKey && !e.metaKey && selectedElement) {
+        setActiveTab("layers");
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [inspecting, selectedElement, handleClose]);
+  }, [inspecting, selectedElement, handleClose, handleUndo, handleRedo]);
 
   // Format time
   const formatTime = (ts: number) => {
@@ -170,6 +278,26 @@ function VizTweakInner() {
     const h = d.getHours().toString().padStart(2, "0");
     const m = d.getMinutes().toString().padStart(2, "0");
     return h + ":" + m;
+  };
+
+  // Panel is open when we have a selected element
+  const panelOpen = selectedElement !== null && elementInfo !== null;
+
+  // Compute panel position styles
+  const panelPositionStyle: React.CSSProperties = {
+    position: "fixed",
+    top: "var(--vt-panel-margin)",
+    [panelSide]: "var(--vt-panel-margin)",
+    width: "var(--vt-panel-width)",
+    height: "calc(100vh - var(--vt-panel-margin) * 2)",
+    background: "var(--vt-panel-bg)",
+    border: "1px solid var(--vt-border)",
+    borderRadius: "var(--vt-panel-radius)",
+    boxShadow: "var(--vt-shadow-panel)",
+    zIndex: 2147483646,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
   };
 
   return (
@@ -181,28 +309,16 @@ function VizTweakInner() {
         ignoreRefs={[panelRef, toggleRef]}
       />
 
-      {/* Right sidebar panel */}
-      {selectedElement && elementInfo && (
+      {/* Floating sidebar panel */}
+      {panelOpen && (
         <div
           ref={panelRef}
           data-viztweak=""
-          style={{
-            position: "fixed",
-            top: 0,
-            right: 0,
-            width: "var(--vt-panel-width)",
-            height: "100vh",
-            background: "var(--vt-panel-bg)",
-            borderLeft: "1px solid var(--vt-border)",
-            zIndex: 2147483646,
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-          }}
+          style={panelPositionStyle}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          {/* Panel header */}
+          {/* ─── Panel header ─── */}
           <div
             style={{
               display: "flex",
@@ -215,6 +331,15 @@ function VizTweakInner() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "4px", minWidth: 0 }}>
+              <span
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: wsConnected ? "var(--vt-success)" : "var(--vt-error)",
+                  flexShrink: 0,
+                }}
+              />
               <span
                 style={{
                   fontSize: "var(--vt-font-size-section)",
@@ -263,62 +388,65 @@ function VizTweakInner() {
             </button>
           </div>
 
-          {/* Connection status */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "4px 12px",
-              borderBottom: "1px solid var(--vt-border)",
-              flexShrink: 0,
-            }}
-          >
-            <span
-              style={{
-                width: "6px",
-                height: "6px",
-                borderRadius: "50%",
-                background: wsConnected
-                  ? "var(--vt-success)"
-                  : "var(--vt-error)",
-                display: "inline-block",
-                flexShrink: 0,
-              }}
-            />
-            <span
-              style={{
-                fontSize: "10px",
-                color: "var(--vt-text-secondary)",
-              }}
-            >
-              {wsConnected ? "Connected" : "Disconnected"}
-            </span>
-          </div>
+          {/* ─── Tab Switcher (Design / Layers) ─── */}
+          <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} connected={wsConnected} />
 
-          {/* Scrollable StylePanel area */}
-          <StylePanel
-            element={selectedElement}
-            elementInfo={elementInfo}
-            diffEngine={diffEngine}
-            wsClient={wsClient}
-            onClose={handleClose}
+          {/* ─── Quick Actions Toolbar ─── */}
+          <QuickActions
+            canUndo={undoStack.length > 0}
+            canRedo={redoStack.length > 0}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onReset={handleReset}
+            onCopyStyles={handleCopyStyles}
+            onPasteStyles={handlePasteStyles}
+            panelSide={panelSide}
+            onToggleSide={handleToggleSide}
+            hasCopied={copiedStyles !== null}
           />
 
-          {/* Chat bar — fixed at bottom */}
+          {/* ─── State Selector (Design tab only) ─── */}
+          {activeTab === "design" && (
+            <>
+              <StateSelector
+                value={pseudoState}
+                onChange={setPseudoState}
+                element={selectedElement}
+              />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+            </>
+          )}
+
+          {/* ─── Tab Content ─── */}
+          {activeTab === "design" ? (
+            <StylePanel
+              element={selectedElement}
+              elementInfo={elementInfo}
+              diffEngine={diffEngine}
+              wsClient={wsClient}
+              onClose={handleClose}
+            />
+          ) : (
+            <LayerTree
+              selectedElement={selectedElement}
+              onSelect={handleSelect}
+            />
+          )}
+
+          {/* ─── Chat bar — fixed at bottom ─── */}
           <div
             style={{
               borderTop: "1px solid var(--vt-border)",
               background: "var(--vt-surface)",
               flexShrink: 0,
+              borderRadius: "0 0 var(--vt-panel-radius) var(--vt-panel-radius)",
             }}
           >
-            {/* Message history */}
             {chatExpanded && messages.length > 0 && (
               <div
                 ref={chatScrollRef}
                 style={{
-                  maxHeight: "140px",
+                  maxHeight: "120px",
                   overflowY: "auto",
                   padding: "6px 8px",
                   display: "flex",
@@ -332,8 +460,7 @@ function VizTweakInner() {
                     style={{
                       display: "flex",
                       flexDirection: "column",
-                      alignItems:
-                        msg.from === "designer" ? "flex-end" : "flex-start",
+                      alignItems: msg.from === "designer" ? "flex-end" : "flex-start",
                     }}
                   >
                     <div
@@ -343,10 +470,7 @@ function VizTweakInner() {
                         borderRadius: "6px",
                         fontSize: "11px",
                         lineHeight: "15px",
-                        background:
-                          msg.from === "designer"
-                            ? "var(--vt-accent-bg)"
-                            : "#F0F0F0",
+                        background: msg.from === "designer" ? "var(--vt-accent-bg)" : "#F0F0F0",
                         color: "var(--vt-text-primary)",
                         wordBreak: "break-word",
                       }}
@@ -412,12 +536,8 @@ function VizTweakInner() {
                   width: "24px",
                   height: "24px",
                   border: "none",
-                  background: chatInput.trim()
-                    ? "var(--vt-accent)"
-                    : "var(--vt-hover)",
-                  color: chatInput.trim()
-                    ? "#FFFFFF"
-                    : "var(--vt-text-disabled)",
+                  background: chatInput.trim() ? "var(--vt-accent)" : "var(--vt-hover)",
+                  color: chatInput.trim() ? "#FFFFFF" : "var(--vt-text-disabled)",
                   borderRadius: "var(--vt-input-radius)",
                   cursor: chatInput.trim() ? "pointer" : "default",
                   padding: 0,
@@ -432,16 +552,16 @@ function VizTweakInner() {
         </div>
       )}
 
-      {/* Toggle button — bottom-right floating circle */}
+      {/* Toggle button — floating circle */}
       <div
         ref={toggleRef}
         data-viztweak=""
         style={{
           position: "fixed",
           bottom: "16px",
-          right: selectedElement ? "276px" : "16px",
+          [panelSide]: panelOpen ? "calc(var(--vt-panel-width) + var(--vt-panel-margin) + 12px)" : "16px",
           zIndex: 2147483647,
-          transition: "right 200ms ease",
+          transition: `${panelSide} 200ms ease`,
         }}
       >
         <button
@@ -475,13 +595,12 @@ function VizTweakInner() {
             inspecting
               ? "Click an element to inspect"
               : selectedElement
-                ? "Editing \u2014 click to close"
+                ? "Editing — click to close"
                 : "Start inspecting (Ctrl+Shift+V)"
           }
           aria-label="VizTweak toggle"
         >
           <IconInspect size={18} />
-          {/* Connection dot */}
           <span
             style={{
               position: "absolute",
@@ -490,15 +609,97 @@ function VizTweakInner() {
               width: "7px",
               height: "7px",
               borderRadius: "50%",
-              background: wsConnected
-                ? "var(--vt-success)"
-                : "var(--vt-error)",
+              background: wsConnected ? "var(--vt-success)" : "var(--vt-error)",
               border: "1.5px solid var(--vt-surface)",
             }}
           />
         </button>
       </div>
     </>
+  );
+}
+
+// ─── Tab Switcher ─────────────────────────────────────────────
+
+function TabSwitcher({
+  activeTab,
+  onTabChange,
+  connected,
+}: {
+  activeTab: PanelTab;
+  onTabChange: (tab: PanelTab) => void;
+  connected: boolean;
+}) {
+  const tabs: { id: PanelTab; label: string; icon: React.ReactNode }[] = [
+    { id: "design", label: "Design", icon: <IconDesign size={12} /> },
+    { id: "layers", label: "Layers", icon: <IconLayers size={12} /> },
+  ];
+  const [hovered, setHovered] = useState<PanelTab | null>(null);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        height: "var(--vt-tab-height)",
+        padding: "0 8px",
+        gap: "2px",
+        borderBottom: "1px solid var(--vt-border)",
+        flexShrink: 0,
+        background: "var(--vt-surface)",
+      }}
+    >
+      {tabs.map((tab) => {
+        const isActive = tab.id === activeTab;
+        const isHov = hovered === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            onMouseEnter={() => setHovered(tab.id)}
+            onMouseLeave={() => setHovered(null)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              height: "24px",
+              padding: "0 8px",
+              border: "none",
+              borderRadius: "var(--vt-input-radius)",
+              cursor: "pointer",
+              fontSize: "11px",
+              fontFamily: "var(--vt-font)",
+              fontWeight: isActive ? 600 : 400,
+              background: isActive
+                ? "var(--vt-accent-bg)"
+                : isHov
+                  ? "var(--vt-hover)"
+                  : "transparent",
+              color: isActive
+                ? "var(--vt-accent)"
+                : "var(--vt-text-secondary)",
+              transition: "all 100ms ease",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        );
+      })}
+
+      {/* Connection status as tiny text on right */}
+      <div style={{ flex: 1 }} />
+      <span
+        style={{
+          fontSize: "9px",
+          color: "var(--vt-text-disabled)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {connected ? "● Agent" : "○ Offline"}
+      </span>
+    </div>
   );
 }
 
