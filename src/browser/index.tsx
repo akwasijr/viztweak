@@ -578,151 +578,98 @@ function VizTweakInner() {
       )}
 
       {/* ─── Floating pill toolbar ─── */}
-      <div
-        ref={toggleRef}
-        data-viztweak=""
-        style={{
-          position: "fixed",
-          bottom: "16px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 2147483647,
-          display: "flex",
-          alignItems: "center",
-          gap: "4px",
-          padding: "6px 10px",
-          background: "var(--vt-surface)",
-          border: "1px solid var(--vt-border)",
-          borderRadius: "999px",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)",
-          fontFamily: "var(--vt-font)",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Inspect toggle — blue circle with change count */}
-        <button
-          onClick={() => {
-            if (selectedElement) {
-              // already editing — just toggle inspect
-              setInspecting((prev) => !prev);
-            } else {
-              setInspecting((prev) => !prev);
-            }
-          }}
-          style={{
-            width: "32px",
-            height: "32px",
-            borderRadius: "50%",
-            border: "none",
-            background: inspecting || selectedElement ? "var(--vt-accent)" : "var(--vt-hover)",
-            color: inspecting || selectedElement ? "#fff" : "var(--vt-text-secondary)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0,
-            position: "relative",
-            flexShrink: 0,
-          }}
-          title={inspecting ? "Click element to inspect" : selectedElement ? "Inspecting" : "Start inspecting (V)"}
-        >
-          <IconInspect size={16} />
-          {/* WS status dot */}
-          <span
+      {(() => {
+        const expanded = inspecting || selectedElement !== null;
+        return (
+          <div
+            ref={toggleRef}
+            data-viztweak=""
             style={{
-              position: "absolute",
-              top: "1px",
-              right: "1px",
-              width: "7px",
-              height: "7px",
-              borderRadius: "50%",
-              background: wsConnected ? "var(--vt-success)" : "var(--vt-error)",
-              border: "1.5px solid " + (inspecting || selectedElement ? "var(--vt-accent)" : "var(--vt-surface)"),
+              position: "fixed",
+              bottom: "16px",
+              right: "16px",
+              zIndex: 2147483647,
+              display: "flex",
+              alignItems: "center",
+              gap: expanded ? "4px" : "0px",
+              padding: expanded ? "6px 10px" : "0px",
+              background: expanded ? "var(--vt-surface)" : "transparent",
+              border: expanded ? "1px solid var(--vt-border)" : "none",
+              borderRadius: "999px",
+              boxShadow: expanded ? "0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)" : "none",
+              fontFamily: "var(--vt-font)",
+              transition: "all 200ms ease",
             }}
-          />
-        </button>
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Inspect toggle — always visible */}
+            <button
+              onClick={() => setInspecting((prev) => !prev)}
+              style={{
+                width: expanded ? "32px" : "40px",
+                height: expanded ? "32px" : "40px",
+                borderRadius: "50%",
+                border: expanded ? "none" : "1px solid var(--vt-border)",
+                background: inspecting || selectedElement ? "var(--vt-accent)" : "var(--vt-surface)",
+                color: inspecting || selectedElement ? "#fff" : "var(--vt-text-secondary)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+                position: "relative",
+                flexShrink: 0,
+                boxShadow: expanded ? "none" : "0 2px 8px rgba(0,0,0,0.12)",
+                transition: "all 200ms ease",
+              }}
+              title={inspecting ? "Click element to inspect" : selectedElement ? "Inspecting" : "Start inspecting (V)"}
+            >
+              <IconInspect size={expanded ? 16 : 18} />
+              <span
+                style={{
+                  position: "absolute",
+                  top: expanded ? "1px" : "2px",
+                  right: expanded ? "1px" : "2px",
+                  width: "7px",
+                  height: "7px",
+                  borderRadius: "50%",
+                  background: wsConnected ? "var(--vt-success)" : "var(--vt-error)",
+                  border: "1.5px solid " + (inspecting || selectedElement ? "var(--vt-accent)" : "var(--vt-surface)"),
+                }}
+              />
+            </button>
 
-        {/* Separator */}
-        <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
+            {/* ─── Expanded toolbar buttons ─── */}
+            {expanded && (
+              <>
+                <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
 
-        {/* Copy styles */}
-        <PillBtn
-          icon={<IconCopy size={15} />}
-          tooltip="Copy styles"
-          onClick={handleCopyStyles}
-          disabled={!selectedElement}
-        />
+                <PillBtn icon={<IconCopy size={15} />} tooltip="Copy styles" onClick={handleCopyStyles} disabled={!selectedElement} />
+                <PillBtn icon={<IconUndo size={15} />} tooltip="Undo (Ctrl+Z)" onClick={handleUndo} disabled={undoStack.length === 0} />
+                <PillBtn icon={<IconRedo size={15} />} tooltip="Redo (Ctrl+Shift+Z)" onClick={handleRedo} disabled={redoStack.length === 0} />
+                <PillBtn icon={<IconReset size={15} />} tooltip="Reset all changes" onClick={handleReset} disabled={!selectedElement} />
 
-        {/* Undo */}
-        <PillBtn
-          icon={<IconUndo size={15} />}
-          tooltip="Undo (Ctrl+Z)"
-          onClick={handleUndo}
-          disabled={undoStack.length === 0}
-        />
+                <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
 
-        {/* Redo */}
-        <PillBtn
-          icon={<IconRedo size={15} />}
-          tooltip="Redo (Ctrl+Shift+Z)"
-          onClick={handleRedo}
-          disabled={redoStack.length === 0}
-        />
+                <PillBtn icon={<IconBoxModel size={15} />} tooltip="Spacing overlay" onClick={() => setShowSpacingOverlay((p) => !p)} active={showSpacingOverlay} />
+                <PillBtn icon={<IconLayoutGrid size={15} />} tooltip="Flex/Grid debugger" onClick={() => setShowLayoutDebugger((p) => !p)} active={showLayoutDebugger} />
+                <PillBtn icon={<IconResponsive size={15} />} tooltip="Responsive preview" onClick={() => setShowResponsive((p) => !p)} active={showResponsive} />
 
-        {/* Reset */}
-        <PillBtn
-          icon={<IconReset size={15} />}
-          tooltip="Reset all changes"
-          onClick={handleReset}
-          disabled={!selectedElement}
-        />
+                <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
 
-        {/* Separator */}
-        <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
-
-        {/* Spacing overlay */}
-        <PillBtn
-          icon={<IconBoxModel size={15} />}
-          tooltip="Spacing overlay"
-          onClick={() => setShowSpacingOverlay((p) => !p)}
-          active={showSpacingOverlay}
-        />
-
-        {/* Layout debugger */}
-        <PillBtn
-          icon={<IconLayoutGrid size={15} />}
-          tooltip="Flex/Grid debugger"
-          onClick={() => setShowLayoutDebugger((p) => !p)}
-          active={showLayoutDebugger}
-        />
-
-        {/* Responsive */}
-        <PillBtn
-          icon={<IconResponsive size={15} />}
-          tooltip="Responsive preview"
-          onClick={() => setShowResponsive((p) => !p)}
-          active={showResponsive}
-        />
-
-        {/* Separator */}
-        <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
-
-        {/* Panel side toggle */}
-        <PillBtn
-          icon={panelSide === "right" ? <IconPanelLeft size={15} /> : <IconPanelRight size={15} />}
-          tooltip={`Move panel ${panelSide === "right" ? "left" : "right"}`}
-          onClick={handleToggleSide}
-        />
-
-        {/* Close */}
-        {selectedElement && (
-          <PillBtn
-            icon={<IconClose size={14} />}
-            tooltip="Close panel (Esc)"
-            onClick={handleClose}
-          />
-        )}
-      </div>
+                <PillBtn
+                  icon={panelSide === "right" ? <IconPanelLeft size={15} /> : <IconPanelRight size={15} />}
+                  tooltip={`Move panel ${panelSide === "right" ? "left" : "right"}`}
+                  onClick={handleToggleSide}
+                />
+                {selectedElement && (
+                  <PillBtn icon={<IconClose size={14} />} tooltip="Close panel (Esc)" onClick={handleClose} />
+                )}
+              </>
+            )}
+          </div>
+        );
+      })()}
     </>
   );
 }

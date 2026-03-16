@@ -1,11 +1,62 @@
 import React, { useState, useCallback, useEffect } from "react";
 
+// ─── Inline device icons (thin stroke, 12px) ─────────────────
+
+function DeviceMobile() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="1" width="8" height="14" rx="1.5" />
+      <line x1="7" y1="12" x2="9" y2="12" />
+    </svg>
+  );
+}
+
+function DeviceTablet() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2.5" y="1" width="11" height="14" rx="1.5" />
+      <line x1="7" y1="12.5" x2="9" y2="12.5" />
+    </svg>
+  );
+}
+
+function DeviceLaptop() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="12" height="9" rx="1" />
+      <line x1="1" y1="13" x2="15" y2="13" />
+    </svg>
+  );
+}
+
+function DeviceDesktop() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="1.5" width="14" height="10" rx="1" />
+      <line x1="6" y1="11.5" x2="6" y2="14" />
+      <line x1="10" y1="11.5" x2="10" y2="14" />
+      <line x1="4" y1="14" x2="12" y2="14" />
+    </svg>
+  );
+}
+
+function DeviceFullscreen() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="2,6 2,2 6,2" />
+      <polyline points="10,2 14,2 14,6" />
+      <polyline points="14,10 14,14 10,14" />
+      <polyline points="6,14 2,14 2,10" />
+    </svg>
+  );
+}
+
 // ─── Types ────────────────────────────────────────────────────
 
 interface Breakpoint {
   label: string;
   width: number;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 interface ResponsivePreviewProps {
@@ -14,12 +65,12 @@ interface ResponsivePreviewProps {
 }
 
 const BREAKPOINTS: Breakpoint[] = [
-  { label: "Mobile", width: 320, icon: "📱" },
-  { label: "Mobile L", width: 425, icon: "📱" },
-  { label: "Tablet", width: 768, icon: "📋" },
-  { label: "Laptop", width: 1024, icon: "💻" },
-  { label: "Desktop", width: 1440, icon: "🖥" },
-  { label: "Full", width: 0, icon: "⛶" },
+  { label: "Mobile", width: 320, icon: <DeviceMobile /> },
+  { label: "Mobile L", width: 425, icon: <DeviceMobile /> },
+  { label: "Tablet", width: 768, icon: <DeviceTablet /> },
+  { label: "Laptop", width: 1024, icon: <DeviceLaptop /> },
+  { label: "Desktop", width: 1440, icon: <DeviceDesktop /> },
+  { label: "Full", width: 0, icon: <DeviceFullscreen /> },
 ];
 
 // Injects a wrapper that constrains the viewport width
@@ -165,7 +216,7 @@ export function ResponsivePreview({ active, onToggle }: ResponsivePreviewProps) 
               whiteSpace: "nowrap",
             }}
           >
-            <span style={{ fontSize: "12px", lineHeight: 1 }}>{bp.icon}</span>
+            <span style={{ display: "flex", alignItems: "center", lineHeight: 1 }}>{bp.icon}</span>
             {bp.width ? `${bp.width}` : "Full"}
           </button>
         );
@@ -194,7 +245,10 @@ export function ResponsivePreview({ active, onToggle }: ResponsivePreviewProps) 
         }}
         title="Exit responsive preview"
       >
-        ✕
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <line x1="3" y1="3" x2="13" y2="13" />
+          <line x1="13" y1="3" x2="3" y2="13" />
+        </svg>
       </button>
     </div>
   );
