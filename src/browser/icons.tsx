@@ -602,3 +602,52 @@ export function IconCode({ size, className }: IconProps) {
     </Svg>
   );
 }
+
+// ─── v0.5 Icons ─────────────────────────────────────────────
+
+export function IconToken({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <circle cx="8" cy="8" r="5.5" />
+      <line x1="8" y1="5" x2="8" y2="11" />
+      <line x1="6" y1="4.5" x2="10" y2="4.5" />
+      <line x1="6" y1="11.5" x2="10" y2="11.5" />
+    </Svg>
+  );
+}
+
+export function IconPalette({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <path d="M8,1.5 A6.5,6.5 0 1,0 14.5,8 C14.5,7 13.5,6 12,6 L10.5,6 A1.5,1.5 0 0,1 9,4.5 L9,3 A1.5,1.5 0 0,0 8,1.5Z" />
+      <circle cx="5" cy="6" r="1" fill="currentColor" />
+      <circle cx="5" cy="10" r="1" fill="currentColor" />
+      <circle cx="8" cy="11.5" r="1" fill="currentColor" />
+    </Svg>
+  );
+}
+
+export function IconLayoutGrid({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="1.5" y="1.5" width="5" height="5" rx="0.5" />
+      <rect x="9.5" y="1.5" width="5" height="5" rx="0.5" />
+      <rect x="1.5" y="9.5" width="5" height="5" rx="0.5" />
+      <rect x="9.5" y="9.5" width="5" height="5" rx="0.5" />
+    </Svg>
+  );
+}
+
+export function IconDiff({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <line x1="4" y1="4" x2="12" y2="4" />
+      <line x1="4" y1="8" x2="12" y2="8" />
+      <line x1="4" y1="12" x2="12" y2="12" />
+      <line x1="2" y1="3" x2="2" y2="5" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="1" y1="8" x2="3" y2="8" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="2" y1="7" x2="2" y2="9" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" strokeWidth="1.5" />
+    </Svg>
+  );
+}

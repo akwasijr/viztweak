@@ -70,6 +70,33 @@ export class DiffEngine {
   }
 
   /**
+   * Returns all tracked elements with their original and current values.
+   */
+  getAllDiffs(): Map<HTMLElement, Record<string, { original: string; current: string }>> {
+    const result = new Map<HTMLElement, Record<string, { original: string; current: string }>>();
+
+    for (const [el, baseline] of this.originalStyles) {
+      if (!el.isConnected) continue;
+      const computed = window.getComputedStyle(el);
+      const changes: Record<string, { original: string; current: string }> = {};
+
+      for (const [prop, originalValue] of Object.entries(baseline)) {
+        const cssName = prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+        const currentValue = computed.getPropertyValue(cssName) || "";
+        if (currentValue !== originalValue) {
+          changes[prop] = { original: originalValue, current: currentValue };
+        }
+      }
+
+      if (Object.keys(changes).length > 0) {
+        result.set(el, changes);
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * Clears the baseline for an element.
    */
   clearBaseline(el: HTMLElement) {

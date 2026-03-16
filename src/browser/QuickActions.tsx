@@ -9,6 +9,7 @@ import {
   IconPanelRight,
   IconBoxModel,
   IconResponsive,
+  IconLayoutGrid,
 } from "./icons.js";
 
 // ─── Types ────────────────────────────────────────────────────
@@ -28,6 +29,8 @@ interface QuickActionsProps {
   onToggleSpacing: () => void;
   responsiveMode: boolean;
   onToggleResponsive: () => void;
+  layoutDebugger: boolean;
+  onToggleLayout: () => void;
 }
 
 // ─── Toolbar Button ───────────────────────────────────────────
@@ -96,6 +99,8 @@ export function QuickActions({
   onToggleSpacing,
   responsiveMode,
   onToggleResponsive,
+  layoutDebugger,
+  onToggleLayout,
 }: QuickActionsProps) {
   return (
     <div
@@ -172,6 +177,12 @@ export function QuickActions({
         tooltip="Responsive preview"
         onClick={onToggleResponsive}
         active={responsiveMode}
+      />
+      <ToolbarBtn
+        icon={<IconLayoutGrid size={14} />}
+        tooltip="Flex/Grid layout debugger"
+        onClick={onToggleLayout}
+        active={layoutDebugger}
       />
 
       {/* Spacer */}

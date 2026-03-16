@@ -21,6 +21,10 @@ import { AccessibilityChecker } from "./AccessibilityChecker.js";
 import { ResponsivePreview } from "./ResponsivePreview.js";
 import { ClassEditor } from "./ClassEditor.js";
 import { CSSVarInspector } from "./CSSVarInspector.js";
+import { TokenExtractor } from "./TokenExtractor.js";
+import { ColorPalette } from "./ColorPalette.js";
+import { GridFlexDebugger } from "./GridFlexDebugger.js";
+import { DiffReporter } from "./DiffReporter.js";
 import { IconInspect, IconClose, IconSend, IconDesign, IconLayers, IconBoxModel, IconResponsive } from "./icons.js";
 
 // ─── Types ────────────────────────────────────────────────────
@@ -73,6 +77,7 @@ function VizTweakInner() {
   const [redoStack, setRedoStack] = useState<UndoEntry[]>([]);
   const [showSpacingOverlay, setShowSpacingOverlay] = useState(false);
   const [showResponsive, setShowResponsive] = useState(false);
+  const [showLayoutDebugger, setShowLayoutDebugger] = useState(false);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLDivElement>(null);
@@ -319,6 +324,9 @@ function VizTweakInner() {
       {/* Spacing overlay */}
       <SpacingOverlay element={selectedElement} visible={showSpacingOverlay} />
 
+      {/* Grid/Flex layout debugger overlay */}
+      <GridFlexDebugger active={showLayoutDebugger} />
+
       {/* Responsive preview bar */}
       <ResponsivePreview active={showResponsive} onToggle={() => setShowResponsive(false)} />
 
@@ -420,6 +428,8 @@ function VizTweakInner() {
             onToggleSpacing={() => setShowSpacingOverlay((p) => !p)}
             responsiveMode={showResponsive}
             onToggleResponsive={() => setShowResponsive((p) => !p)}
+            layoutDebugger={showLayoutDebugger}
+            onToggleLayout={() => setShowLayoutDebugger((p) => !p)}
           />
 
           {/* ─── State Selector (Design tab only) ─── */}
@@ -447,6 +457,12 @@ function VizTweakInner() {
               {/* Divider */}
               <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
               <ClassEditor element={selectedElement} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <TokenExtractor element={selectedElement} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <DiffReporter diffEngine={diffEngine} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <ColorPalette />
               <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
               <AccessibilityChecker element={selectedElement} />
               <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
