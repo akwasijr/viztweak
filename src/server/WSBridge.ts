@@ -3,13 +3,16 @@ import type {
   WSMessage,
   ElementSelectedPayload,
   ChangesUpdatedPayload,
+  DesignerMessagePayload,
+  AgentStatusPayload,
 } from "../shared/types.js";
 import { WS_PORT } from "../shared/types.js";
 import { ChangeStore } from "./ChangeStore.js";
 
 /**
  * WebSocket bridge that connects the browser component to the MCP server.
- * Runs a WS server on localhost:7890 and relays element selections + changes.
+ * Runs a WS server on localhost:7890 and relays element selections,
+ * changes, and designer messages.
  */
 export class WSBridge {
   private wss: WebSocketServer | null = null;
@@ -72,11 +75,25 @@ export class WSBridge {
         this.store.clearDiffs();
         break;
       }
+      case "designer_message": {
+        const payload = msg.payload as DesignerMessagePayload;
+        this.store.addMessage(payload.text);
+        console.error(`[viztweak] Designer message: "${payload.text}"`);
+        break;
+      }
       case "ping": {
         this.broadcast({ type: "pong" });
         break;
       }
     }
+  }
+
+  /** Send a status update from the agent to all connected browsers */
+  sendAgentStatus(text: string, type: AgentStatusPayload["type"] = "info") {
+    this.broadcast({
+      type: "agent_status",
+      payload: { text, type } satisfies AgentStatusPayload,
+    });
   }
 
   broadcast(msg: WSMessage) {

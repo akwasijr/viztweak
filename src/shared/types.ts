@@ -31,6 +31,21 @@ export interface ElementDiff {
   timestamp: number;
 }
 
+// ─── Designer messages (talk-back) ───
+
+export interface DesignerMessage {
+  id: string;
+  text: string;
+  timestamp: number;
+  acknowledged: boolean;
+}
+
+export interface AgentStatus {
+  text: string;
+  type: "info" | "success" | "error" | "thinking";
+  timestamp: number;
+}
+
 // ─── WebSocket message protocol ───
 
 export type WSMessageType =
@@ -39,6 +54,10 @@ export type WSMessageType =
   | "changes_cleared"
   | "request_changes"
   | "request_selection"
+  | "designer_message"
+  | "agent_status"
+  | "agent_thinking"
+  | "changes_applied"
   | "ping"
   | "pong";
 
@@ -54,6 +73,17 @@ export interface ElementSelectedPayload {
 
 export interface ChangesUpdatedPayload {
   diffs: ElementDiff[];
+}
+
+export interface DesignerMessagePayload {
+  id: string;
+  text: string;
+  timestamp: number;
+}
+
+export interface AgentStatusPayload {
+  text: string;
+  type: "info" | "success" | "error" | "thinking";
 }
 
 // ─── Editable style properties ───

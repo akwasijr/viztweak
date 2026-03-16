@@ -1,13 +1,17 @@
-import type { ElementDiff, ElementInfo } from "../shared/types.js";
+import type { ElementDiff, ElementInfo, DesignerMessage } from "../shared/types.js";
 
 /**
- * In-memory store for pending visual changes and current selection.
- * Shared between the MCP tools and the WebSocket bridge.
+ * In-memory store for pending visual changes, current selection,
+ * and designer messages (talk-back queue).
  */
 export class ChangeStore {
   private diffs: ElementDiff[] = [];
   private selectedElement: ElementInfo | null = null;
   private computedStyles: Record<string, string> = {};
+  private messages: DesignerMessage[] = [];
+  private messageCounter = 0;
+
+  // ─── Selection ───
 
   setSelection(element: ElementInfo, styles: Record<string, string>) {
     this.selectedElement = element;
@@ -19,6 +23,8 @@ export class ChangeStore {
       ? { element: this.selectedElement, computedStyles: this.computedStyles }
       : null;
   }
+
+  // ─── Diffs ───
 
   addDiff(diff: ElementDiff) {
     const existing = this.diffs.findIndex(
@@ -38,6 +44,43 @@ export class ChangeStore {
   clearDiffs() {
     this.diffs = [];
   }
+
+  // ─── Designer messages (talk-back) ───
+
+  addMessage(text: string): DesignerMessage {
+    const msg: DesignerMessage = {
+      id: `msg-${++this.messageCounter}`,
+      text,
+      timestamp: Date.now(),
+      acknowledged: false,
+    };
+    this.messages.push(msg);
+    return msg;
+  }
+
+  getUnacknowledgedMessages(): DesignerMessage[] {
+    return this.messages.filter((m) => !m.acknowledged);
+  }
+
+  getAllMessages(): DesignerMessage[] {
+    return [...this.messages];
+  }
+
+  acknowledgeMessages(ids: string[]) {
+    for (const msg of this.messages) {
+      if (ids.includes(msg.id)) {
+        msg.acknowledged = true;
+      }
+    }
+  }
+
+  acknowledgeAll() {
+    for (const msg of this.messages) {
+      msg.acknowledged = true;
+    }
+  }
+
+  // ─── Markdown formatting ───
 
   formatChangesMarkdown(): string {
     if (this.diffs.length === 0) {
@@ -74,5 +117,19 @@ export class ChangeStore {
     });
 
     return `# Visual Changes (${this.diffs.length} element${this.diffs.length > 1 ? "s" : ""})\n\n${sections.join("\n\n---\n\n")}`;
+  }
+
+  formatMessagesMarkdown(): string {
+    const pending = this.getUnacknowledgedMessages();
+    if (pending.length === 0) {
+      return "No new messages from the designer.";
+    }
+
+    const lines = pending.map((m) => {
+      const time = new Date(m.timestamp).toLocaleTimeString();
+      return `- **[${time}]** ${m.text} _(id: ${m.id})_`;
+    });
+
+    return `# Designer Messages (${pending.length} unread)\n\n${lines.join("\n")}`;
   }
 }
