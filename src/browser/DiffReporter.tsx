@@ -59,7 +59,7 @@ function generateSelector(el: HTMLElement): string {
 
 // ─── Format Outputs ───────────────────────────────────────────
 
-type OutputFormat = "css" | "patch" | "tailwind";
+type OutputFormat = "css" | "patch";
 
 function formatDiffs(diffs: DiffEntry[], fmt: OutputFormat): string {
   if (fmt === "css") {
@@ -82,48 +82,13 @@ function formatDiffs(diffs: DiffEntry[], fmt: OutputFormat): string {
       .join("\n\n");
   }
 
-  // Tailwind approximation
+  // css vars
   return diffs
     .map((d) => {
-      const tw = d.changes.map((c) => cssToTailwindHint(c.property, c.after)).filter(Boolean);
-      return `<!-- ${d.selector} -->\n${tw.join(" ")}`;
+      const props = d.changes.map((c) => `  ${c.property}: ${c.after};`).join("\n");
+      return `${d.selector} {\n${props}\n}`;
     })
     .join("\n\n");
-}
-
-function cssToTailwindHint(prop: string, value: string): string {
-  const px = parseInt(value);
-  const pxToTw: Record<number, string> = {
-    0: "0", 1: "px", 2: "0.5", 4: "1", 6: "1.5", 8: "2", 10: "2.5",
-    12: "3", 14: "3.5", 16: "4", 20: "5", 24: "6", 28: "7", 32: "8",
-    36: "9", 40: "10", 44: "11", 48: "12", 56: "14", 64: "16", 80: "20",
-    96: "24",
-  };
-  const twSize = pxToTw[px] || `[${value}]`;
-
-  const map: Record<string, string> = {
-    "padding-top": `pt-${twSize}`,
-    "padding-right": `pr-${twSize}`,
-    "padding-bottom": `pb-${twSize}`,
-    "padding-left": `pl-${twSize}`,
-    "margin-top": `mt-${twSize}`,
-    "margin-right": `mr-${twSize}`,
-    "margin-bottom": `mb-${twSize}`,
-    "margin-left": `ml-${twSize}`,
-    "border-radius": `rounded-[${value}]`,
-    "font-size": `text-[${value}]`,
-    "font-weight": `font-[${value}]`,
-    "gap": `gap-${twSize}`,
-    "width": `w-[${value}]`,
-    "height": `h-[${value}]`,
-    "opacity": `opacity-[${value}]`,
-  };
-
-  if (prop === "background-color" || prop === "color" || prop === "border-color") {
-    return `${prop === "color" ? "text" : prop === "background-color" ? "bg" : "border"}-[${value}]`;
-  }
-
-  return map[prop] || `/* ${prop}: ${value} */`;
 }
 
 // ─── Component ────────────────────────────────────────────────
@@ -188,7 +153,7 @@ export function DiffReporter({ diffEngine }: { diffEngine: DiffEngine | null }) 
             <>
               {/* Format selector + copy */}
               <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "6px" }}>
-                {(["css", "patch", "tailwind"] as OutputFormat[]).map((fmt) => (
+                {(["css", "patch"] as OutputFormat[]).map((fmt) => (
                   <button
                     key={fmt}
                     onClick={() => setOutputFmt(fmt)}

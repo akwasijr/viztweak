@@ -8,7 +8,6 @@ import React, {
 import { Inspector } from "./Inspector.js";
 import { StylePanel } from "./StylePanel.js";
 import { LayerTree } from "./LayerTree.js";
-import { QuickActions } from "./QuickActions.js";
 import { StateSelector, type PseudoState } from "./StateSelector.js";
 import { DiffEngine } from "./DiffEngine.js";
 import { WSClient } from "./WSClient.js";
@@ -25,11 +24,11 @@ import { TokenExtractor } from "./TokenExtractor.js";
 import { ColorPalette } from "./ColorPalette.js";
 import { GridFlexDebugger } from "./GridFlexDebugger.js";
 import { DiffReporter } from "./DiffReporter.js";
-import { IconInspect, IconClose, IconSend, IconDesign, IconLayers, IconBoxModel, IconResponsive } from "./icons.js";
+import { IconInspect, IconClose, IconSend, IconDesign, IconLayers, IconBoxModel, IconResponsive, IconUndo, IconRedo, IconReset, IconCopy, IconPanelLeft, IconPanelRight, IconLayoutGrid, IconCode } from "./icons.js";
 
 // ─── Types ────────────────────────────────────────────────────
 
-type PanelTab = "design" | "layers";
+type PanelTab = "design" | "layers" | "inspect";
 type PanelSide = "left" | "right";
 
 interface ChatMessage {
@@ -272,12 +271,15 @@ function VizTweakInner() {
         e.preventDefault();
         handleRedo();
       }
-      // Tab switch: 1 = Design, 2 = Layers
+      // Tab switch: 1 = Design, 2 = Layers, 3 = Inspect
       if (e.key === "1" && !e.ctrlKey && !e.metaKey && selectedElement) {
         setActiveTab("design");
       }
       if (e.key === "2" && !e.ctrlKey && !e.metaKey && selectedElement) {
         setActiveTab("layers");
+      }
+      if (e.key === "3" && !e.ctrlKey && !e.metaKey && selectedElement) {
+        setActiveTab("inspect");
       }
     };
     document.addEventListener("keydown", handler);
@@ -409,28 +411,8 @@ function VizTweakInner() {
             </button>
           </div>
 
-          {/* ─── Tab Switcher (Design / Layers) ─── */}
+          {/* ─── Tab Switcher (Design / Layers / Inspect) ─── */}
           <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} connected={wsConnected} />
-
-          {/* ─── Quick Actions Toolbar ─── */}
-          <QuickActions
-            canUndo={undoStack.length > 0}
-            canRedo={redoStack.length > 0}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            onReset={handleReset}
-            onCopyStyles={handleCopyStyles}
-            onPasteStyles={handlePasteStyles}
-            panelSide={panelSide}
-            onToggleSide={handleToggleSide}
-            hasCopied={copiedStyles !== null}
-            spacingOverlay={showSpacingOverlay}
-            onToggleSpacing={() => setShowSpacingOverlay((p) => !p)}
-            responsiveMode={showResponsive}
-            onToggleResponsive={() => setShowResponsive((p) => !p)}
-            layoutDebugger={showLayoutDebugger}
-            onToggleLayout={() => setShowLayoutDebugger((p) => !p)}
-          />
 
           {/* ─── State Selector (Design tab only) ─── */}
           {activeTab === "design" && (
@@ -454,10 +436,11 @@ function VizTweakInner() {
                 wsClient={wsClient}
                 onClose={handleClose}
               />
-              {/* Divider */}
               <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
               <ClassEditor element={selectedElement} />
-              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+            </div>
+          ) : activeTab === "inspect" ? (
+            <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflowY: "auto" }}>
               <TokenExtractor element={selectedElement} />
               <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
               <DiffReporter diffEngine={diffEngine} />
@@ -594,70 +577,206 @@ function VizTweakInner() {
         </div>
       )}
 
-      {/* Toggle button — floating circle */}
+      {/* ─── Floating pill toolbar ─── */}
       <div
         ref={toggleRef}
         data-viztweak=""
         style={{
           position: "fixed",
           bottom: "16px",
-          [panelSide]: panelOpen ? "calc(var(--vt-panel-width) + var(--vt-panel-margin) + 12px)" : "16px",
+          left: "50%",
+          transform: "translateX(-50%)",
           zIndex: 2147483647,
-          transition: `${panelSide} 200ms ease`,
+          display: "flex",
+          alignItems: "center",
+          gap: "4px",
+          padding: "6px 10px",
+          background: "var(--vt-surface)",
+          border: "1px solid var(--vt-border)",
+          borderRadius: "999px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)",
+          fontFamily: "var(--vt-font)",
         }}
+        onClick={(e) => e.stopPropagation()}
       >
+        {/* Inspect toggle — blue circle with change count */}
         <button
           onClick={() => {
             if (selectedElement) {
-              handleClose();
+              // already editing — just toggle inspect
+              setInspecting((prev) => !prev);
             } else {
               setInspecting((prev) => !prev);
             }
           }}
           style={{
-            width: "36px",
-            height: "36px",
+            width: "32px",
+            height: "32px",
             borderRadius: "50%",
-            border: "1px solid var(--vt-border)",
-            background: "var(--vt-surface)",
-            color: inspecting
-              ? "var(--vt-accent)"
-              : selectedElement
-                ? "var(--vt-success)"
-                : "var(--vt-text-secondary)",
+            border: "none",
+            background: inspecting || selectedElement ? "var(--vt-accent)" : "var(--vt-hover)",
+            color: inspecting || selectedElement ? "#fff" : "var(--vt-text-secondary)",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "var(--vt-shadow-md)",
-            position: "relative",
             padding: 0,
+            position: "relative",
+            flexShrink: 0,
           }}
-          title={
-            inspecting
-              ? "Click an element to inspect"
-              : selectedElement
-                ? "Editing — click to close"
-                : "Start inspecting (Ctrl+Shift+V)"
-          }
-          aria-label="VizTweak toggle"
+          title={inspecting ? "Click element to inspect" : selectedElement ? "Inspecting" : "Start inspecting (V)"}
         >
-          <IconInspect size={18} />
+          <IconInspect size={16} />
+          {/* WS status dot */}
           <span
             style={{
               position: "absolute",
-              top: "2px",
-              right: "2px",
+              top: "1px",
+              right: "1px",
               width: "7px",
               height: "7px",
               borderRadius: "50%",
               background: wsConnected ? "var(--vt-success)" : "var(--vt-error)",
-              border: "1.5px solid var(--vt-surface)",
+              border: "1.5px solid " + (inspecting || selectedElement ? "var(--vt-accent)" : "var(--vt-surface)"),
             }}
           />
         </button>
+
+        {/* Separator */}
+        <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
+
+        {/* Copy styles */}
+        <PillBtn
+          icon={<IconCopy size={15} />}
+          tooltip="Copy styles"
+          onClick={handleCopyStyles}
+          disabled={!selectedElement}
+        />
+
+        {/* Undo */}
+        <PillBtn
+          icon={<IconUndo size={15} />}
+          tooltip="Undo (Ctrl+Z)"
+          onClick={handleUndo}
+          disabled={undoStack.length === 0}
+        />
+
+        {/* Redo */}
+        <PillBtn
+          icon={<IconRedo size={15} />}
+          tooltip="Redo (Ctrl+Shift+Z)"
+          onClick={handleRedo}
+          disabled={redoStack.length === 0}
+        />
+
+        {/* Reset */}
+        <PillBtn
+          icon={<IconReset size={15} />}
+          tooltip="Reset all changes"
+          onClick={handleReset}
+          disabled={!selectedElement}
+        />
+
+        {/* Separator */}
+        <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
+
+        {/* Spacing overlay */}
+        <PillBtn
+          icon={<IconBoxModel size={15} />}
+          tooltip="Spacing overlay"
+          onClick={() => setShowSpacingOverlay((p) => !p)}
+          active={showSpacingOverlay}
+        />
+
+        {/* Layout debugger */}
+        <PillBtn
+          icon={<IconLayoutGrid size={15} />}
+          tooltip="Flex/Grid debugger"
+          onClick={() => setShowLayoutDebugger((p) => !p)}
+          active={showLayoutDebugger}
+        />
+
+        {/* Responsive */}
+        <PillBtn
+          icon={<IconResponsive size={15} />}
+          tooltip="Responsive preview"
+          onClick={() => setShowResponsive((p) => !p)}
+          active={showResponsive}
+        />
+
+        {/* Separator */}
+        <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
+
+        {/* Panel side toggle */}
+        <PillBtn
+          icon={panelSide === "right" ? <IconPanelLeft size={15} /> : <IconPanelRight size={15} />}
+          tooltip={`Move panel ${panelSide === "right" ? "left" : "right"}`}
+          onClick={handleToggleSide}
+        />
+
+        {/* Close */}
+        {selectedElement && (
+          <PillBtn
+            icon={<IconClose size={14} />}
+            tooltip="Close panel (Esc)"
+            onClick={handleClose}
+          />
+        )}
       </div>
     </>
+  );
+}
+
+// ─── Pill Toolbar Button ──────────────────────────────────────
+
+function PillBtn({
+  icon,
+  tooltip,
+  onClick,
+  disabled,
+  active,
+}: {
+  icon: React.ReactNode;
+  tooltip: string;
+  onClick: () => void;
+  disabled?: boolean;
+  active?: boolean;
+}) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={tooltip}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        width: "30px",
+        height: "30px",
+        borderRadius: "50%",
+        border: "none",
+        background: active
+          ? "var(--vt-accent-bg)"
+          : hov && !disabled
+            ? "var(--vt-hover)"
+            : "transparent",
+        color: active
+          ? "var(--vt-accent)"
+          : disabled
+            ? "var(--vt-text-disabled)"
+            : "var(--vt-text-primary)",
+        cursor: disabled ? "default" : "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 0,
+        flexShrink: 0,
+        opacity: disabled ? 0.4 : 1,
+        transition: "background 100ms ease, color 100ms ease",
+      }}
+    >
+      {icon}
+    </button>
   );
 }
 
@@ -675,6 +794,7 @@ function TabSwitcher({
   const tabs: { id: PanelTab; label: string; icon: React.ReactNode }[] = [
     { id: "design", label: "Design", icon: <IconDesign size={12} /> },
     { id: "layers", label: "Layers", icon: <IconLayers size={12} /> },
+    { id: "inspect", label: "Inspect", icon: <IconCode size={12} /> },
   ];
   const [hovered, setHovered] = useState<PanelTab | null>(null);
 
