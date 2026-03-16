@@ -436,11 +436,11 @@ function VizTweakInner() {
                 wsClient={wsClient}
                 onClose={handleClose}
               />
-              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
-              <ClassEditor element={selectedElement} />
             </div>
           ) : activeTab === "inspect" ? (
             <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflowY: "auto" }}>
+              <ClassEditor element={selectedElement} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
               <TokenExtractor element={selectedElement} />
               <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
               <DiffReporter diffEngine={diffEngine} />

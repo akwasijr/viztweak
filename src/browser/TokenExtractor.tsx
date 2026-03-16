@@ -141,7 +141,7 @@ export function TokenExtractor({ element }: { element: HTMLElement | null }) {
 
   return (
     <div data-viztweak="" style={{ flexShrink: 0 }}>
-      <SectionHeader label="Design Tokens" open={open} onToggle={() => setOpen((p) => !p)} />
+      <SectionHeader title="Design Tokens" expanded={open} onToggle={() => setOpen((p) => !p)} />
       {open && (
         <div style={{ padding: "4px 12px 8px" }}>
           {/* Export format + copy */}

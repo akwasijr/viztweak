@@ -139,8 +139,8 @@ export function DiffReporter({ diffEngine }: { diffEngine: DiffEngine | null }) 
   return (
     <div data-viztweak="" style={{ flexShrink: 0 }}>
       <SectionHeader
-        label={`Changes${totalChanges > 0 ? ` (${totalChanges})` : ""}`}
-        open={open}
+        title={`Changes${totalChanges > 0 ? ` (${totalChanges})` : ""}`}
+        expanded={open}
         onToggle={() => setOpen((p) => !p)}
       />
       {open && (

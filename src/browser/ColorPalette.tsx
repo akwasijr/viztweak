@@ -150,7 +150,7 @@ export function ColorPalette() {
 
   return (
     <div data-viztweak="" style={{ flexShrink: 0 }}>
-      <SectionHeader label="Color Palette" open={open} onToggle={() => setOpen((p) => !p)} />
+      <SectionHeader title="Color Palette" expanded={open} onToggle={() => setOpen((p) => !p)} />
       {open && (
         <div style={{ padding: "4px 12px 8px" }}>
           {/* Controls */}
