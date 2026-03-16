@@ -209,9 +209,7 @@ export function StylePanel({
         display: "flex",
         flexDirection: "column",
         gap: 0,
-        overflowY: "auto",
-        flex: 1,
-        minHeight: 0,
+        flexShrink: 0,
       }}
     >
       {/* ── Frame section ── */}

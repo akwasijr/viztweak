@@ -16,7 +16,12 @@ import { resolveElement } from "./ElementResolver.js";
 import { ALL_EDITABLE_PROPERTIES } from "../shared/types.js";
 import type { ElementInfo, AgentStatusPayload } from "../shared/types.js";
 import { injectTheme, THEME_ATTR } from "./theme.js";
-import { IconInspect, IconClose, IconSend, IconDesign, IconLayers } from "./icons.js";
+import { SpacingOverlay } from "./SpacingOverlay.js";
+import { AccessibilityChecker } from "./AccessibilityChecker.js";
+import { ResponsivePreview } from "./ResponsivePreview.js";
+import { ClassEditor } from "./ClassEditor.js";
+import { CSSVarInspector } from "./CSSVarInspector.js";
+import { IconInspect, IconClose, IconSend, IconDesign, IconLayers, IconBoxModel, IconResponsive } from "./icons.js";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -66,6 +71,8 @@ function VizTweakInner() {
   const [copiedStyles, setCopiedStyles] = useState<Record<string, string> | null>(null);
   const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
   const [redoStack, setRedoStack] = useState<UndoEntry[]>([]);
+  const [showSpacingOverlay, setShowSpacingOverlay] = useState(false);
+  const [showResponsive, setShowResponsive] = useState(false);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLDivElement>(null);
@@ -309,6 +316,12 @@ function VizTweakInner() {
         ignoreRefs={[panelRef, toggleRef]}
       />
 
+      {/* Spacing overlay */}
+      <SpacingOverlay element={selectedElement} visible={showSpacingOverlay} />
+
+      {/* Responsive preview bar */}
+      <ResponsivePreview active={showResponsive} onToggle={() => setShowResponsive(false)} />
+
       {/* Floating sidebar panel */}
       {panelOpen && (
         <div
@@ -403,6 +416,10 @@ function VizTweakInner() {
             panelSide={panelSide}
             onToggleSide={handleToggleSide}
             hasCopied={copiedStyles !== null}
+            spacingOverlay={showSpacingOverlay}
+            onToggleSpacing={() => setShowSpacingOverlay((p) => !p)}
+            responsiveMode={showResponsive}
+            onToggleResponsive={() => setShowResponsive((p) => !p)}
           />
 
           {/* ─── State Selector (Design tab only) ─── */}
@@ -419,13 +436,22 @@ function VizTweakInner() {
 
           {/* ─── Tab Content ─── */}
           {activeTab === "design" ? (
-            <StylePanel
-              element={selectedElement}
-              elementInfo={elementInfo}
-              diffEngine={diffEngine}
-              wsClient={wsClient}
-              onClose={handleClose}
-            />
+            <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflowY: "auto" }}>
+              <StylePanel
+                element={selectedElement}
+                elementInfo={elementInfo}
+                diffEngine={diffEngine}
+                wsClient={wsClient}
+                onClose={handleClose}
+              />
+              {/* Divider */}
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <ClassEditor element={selectedElement} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <AccessibilityChecker element={selectedElement} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <CSSVarInspector element={selectedElement} />
+            </div>
           ) : (
             <LayerTree
               selectedElement={selectedElement}

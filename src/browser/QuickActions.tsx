@@ -7,6 +7,8 @@ import {
   IconPaste,
   IconPanelLeft,
   IconPanelRight,
+  IconBoxModel,
+  IconResponsive,
 } from "./icons.js";
 
 // ─── Types ────────────────────────────────────────────────────
@@ -22,6 +24,10 @@ interface QuickActionsProps {
   panelSide: "left" | "right";
   onToggleSide: () => void;
   hasCopied: boolean;
+  spacingOverlay: boolean;
+  onToggleSpacing: () => void;
+  responsiveMode: boolean;
+  onToggleResponsive: () => void;
 }
 
 // ─── Toolbar Button ───────────────────────────────────────────
@@ -86,6 +92,10 @@ export function QuickActions({
   panelSide,
   onToggleSide,
   hasCopied,
+  spacingOverlay,
+  onToggleSpacing,
+  responsiveMode,
+  onToggleResponsive,
 }: QuickActionsProps) {
   return (
     <div
@@ -138,6 +148,30 @@ export function QuickActions({
         tooltip="Paste styles"
         onClick={onPasteStyles}
         disabled={!hasCopied}
+      />
+
+      {/* Separator */}
+      <div
+        style={{
+          width: "1px",
+          height: "16px",
+          background: "var(--vt-border)",
+          margin: "0 2px",
+          flexShrink: 0,
+        }}
+      />
+
+      <ToolbarBtn
+        icon={<IconBoxModel size={14} />}
+        tooltip="Toggle spacing overlay"
+        onClick={onToggleSpacing}
+        active={spacingOverlay}
+      />
+      <ToolbarBtn
+        icon={<IconResponsive size={14} />}
+        tooltip="Responsive preview"
+        onClick={onToggleResponsive}
+        active={responsiveMode}
       />
 
       {/* Spacer */}

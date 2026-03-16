@@ -9,8 +9,52 @@ const bridge = new WSBridge(store);
 
 const server = new McpServer({
   name: "viztweak",
-  version: "0.2.0",
+  version: "0.4.0",
 });
+
+// ─── Notification: new_designer_message ───
+// When a designer sends a message, we update this resource so the agent gets prompted.
+// MCP resource subscriptions aren't widely supported yet, so we also
+// expose a tool that returns a human-readable prompt to check messages.
+
+server.tool(
+  "check_for_updates",
+  "Check if there are any new designer messages or visual changes pending. Call this periodically or when the designer may have sent feedback. Returns a summary of what needs attention.",
+  {},
+  async () => {
+    const unread = store.getUnacknowledgedMessages();
+    const diffs = store.getDiffs();
+    const selection = store.getSelection();
+
+    const parts: string[] = [];
+
+    if (unread.length > 0) {
+      parts.push(`📬 ${unread.length} unread designer message(s):`);
+      for (const m of unread) {
+        const time = new Date(m.timestamp).toLocaleTimeString();
+        parts.push(`  [${time}] "${m.text}" (id: ${m.id})`);
+      }
+    }
+
+    if (diffs.length > 0) {
+      parts.push(`🎨 ${diffs.length} visual change(s) pending`);
+    }
+
+    if (selection) {
+      parts.push(`🔍 Selected: <${selection.element.tagName}> ${selection.element.textContent || ""}`);
+    }
+
+    if (parts.length === 0) {
+      return {
+        content: [{ type: "text", text: "No updates. The designer hasn't sent any messages or made visual changes." }],
+      };
+    }
+
+    return {
+      content: [{ type: "text", text: parts.join("\n") }],
+    };
+  }
+);
 
 // ─── Tool: get_formatted_changes ───
 server.tool(
@@ -139,7 +183,7 @@ async function main() {
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("[viztweak] MCP server v0.2.0 running on stdio (6 tools)");
+  console.error("[viztweak] MCP server v0.4.0 running on stdio (7 tools)");
 }
 
 main().catch((err) => {

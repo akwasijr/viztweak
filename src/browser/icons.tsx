@@ -554,3 +554,51 @@ export function IconDesign({ size, className }: IconProps) {
     </Svg>
   );
 }
+
+// ─── Accessibility ───────────────────────────────────────────
+
+export function IconAccessibility({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <circle cx="8" cy="3.5" r="1.5" />
+      <path d="M4 6.5l4 1 4-1" />
+      <line x1="8" y1="7.5" x2="8" y2="10" />
+      <line x1="8" y1="10" x2="5.5" y2="14" />
+      <line x1="8" y1="10" x2="10.5" y2="14" />
+    </Svg>
+  );
+}
+
+// ─── Responsive / Device ─────────────────────────────────────
+
+export function IconResponsive({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="1" y="3" width="10" height="7" rx="1" />
+      <rect x="9" y="5" width="5" height="9" rx="1" />
+    </Svg>
+  );
+}
+
+// ─── Spacing / Box Model ─────────────────────────────────────
+
+export function IconBoxModel({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="2" y="2" width="12" height="12" rx="1" strokeDasharray="2 2" />
+      <rect x="5" y="5" width="6" height="6" rx="0.5" />
+    </Svg>
+  );
+}
+
+// ─── Code / Braces ───────────────────────────────────────────
+
+export function IconCode({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <polyline points="5,4 2,8 5,12" />
+      <polyline points="11,4 14,8 11,12" />
+      <line x1="9" y1="3" x2="7" y2="13" />
+    </Svg>
+  );
+}
