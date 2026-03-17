@@ -92,6 +92,34 @@ export const themeCSS = /* css */ `
 [${THEME_ATTR}] *, [${THEME_ATTR}] *::before, [${THEME_ATTR}] *::after {
   box-sizing: border-box;
 }
+
+/* ─── Isolation: prevent inherited styles from page/body leaking in ─── */
+/* Portal is a direct child of <html>, sibling of <body> — fully isolated */
+#viztweak-portal,
+#viztweak-portal * {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+  line-height: 16px !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  text-indent: 0 !important;
+  word-spacing: normal !important;
+  direction: ltr !important;
+  text-decoration: none !important;
+}
+#viztweak-portal {
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  color: inherit !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  transform: none !important;
+  cursor: default !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
 `;
 
 /** Get stored theme preference, default to dark */

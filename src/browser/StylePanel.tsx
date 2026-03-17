@@ -268,15 +268,18 @@ export function StylePanel({
   }, []);
 
   // Apply a CSS change live and generate diff
+  // Portal is on <html> (sibling of <body>), so body changes don't cascade.
+  // For <html> changes, the portal CSS isolation rules override inherited values.
   const apply = useCallback(
     (cssProp: string, value: string) => {
       element.style.setProperty(cssProp, value);
+
       const diff = diffEngine.generateDiff(element);
       if (diff) {
         wsClient.send({ type: "changes_updated", payload: { diffs: [diff] } });
       }
-      // Re-assert VizTweak fixed positioning after changes to layout-affecting
-      // properties on ancestor elements (body, html, root containers)
+
+      // Re-assert VizTweak fixed positioning after layout-affecting changes
       const layoutProps = ["position", "display", "overflow", "transform", "filter", "perspective", "will-change", "contain"];
       if (layoutProps.includes(cssProp)) {
         requestAnimationFrame(() => {

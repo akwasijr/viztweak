@@ -89,8 +89,8 @@ function VizTweakInner() {
   const diffEngine = useMemo(() => new DiffEngine(), []);
   const wsClient = useMemo(() => new WSClient(), []);
 
-  // Create a portal container directly on document.body so VizTweak
-  // elements are never affected by position/transform changes on app elements
+  // Create a portal container on document.documentElement (NOT body) so VizTweak
+  // is a sibling of <body>, fully isolated from body/page style changes and filters
   useEffect(() => {
     let container = document.getElementById("viztweak-portal") as HTMLDivElement | null;
     if (!container) {
@@ -98,7 +98,7 @@ function VizTweakInner() {
       container.id = "viztweak-portal";
       container.setAttribute("data-viztweak", "");
       container.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;overflow:visible;z-index:2147483640;pointer-events:none;";
-      document.body.appendChild(container);
+      document.documentElement.appendChild(container);
     }
     portalRef.current = container;
     return () => {
@@ -176,11 +176,12 @@ function VizTweakInner() {
     }
   }, [messages]);
 
-  // Apply color vision simulation filter to <html> element
+  // Apply color vision simulation filter to <body> (not <html>)
+  // Portal lives on <html> as a sibling of <body>, so body filters won't affect it
   useEffect(() => {
-    const html = document.documentElement;
+    const body = document.body;
     if (!colorBlindMode) {
-      html.style.removeProperty("filter");
+      body.style.removeProperty("filter");
       return;
     }
     const filterMap: Record<string, string> = {
@@ -189,8 +190,8 @@ function VizTweakInner() {
       tritanopia: "url(#vt-tritanopia)",
       monochromacy: "saturate(0)",
     };
-    html.style.setProperty("filter", filterMap[colorBlindMode] || "");
-    return () => { html.style.removeProperty("filter"); };
+    body.style.setProperty("filter", filterMap[colorBlindMode] || "");
+    return () => { body.style.removeProperty("filter"); };
   }, [colorBlindMode]);
 
   // Handle element selection (from inspector or layer tree)
