@@ -109,11 +109,7 @@ export class ChangeStore {
         ),
       ].join("\n");
 
-      const tailwind = diff.suggestedTailwind
-        ? `\n> Suggested Tailwind: \`${diff.suggestedTailwind}\``
-        : "";
-
-      return `${header}\n\n### Changes\n${table}${tailwind}`;
+      return `${header}\n\n### Changes\n${table}`;
     });
 
     return `# Visual Changes (${this.diffs.length} element${this.diffs.length > 1 ? "s" : ""})\n\n${sections.join("\n\n---\n\n")}`;

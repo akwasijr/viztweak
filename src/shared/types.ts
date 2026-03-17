@@ -12,7 +12,7 @@ export interface ElementInfo {
   /** Class list */
   classList: string[];
   /** Detected CSS approach */
-  stylingApproach: "tailwind" | "css-modules" | "plain-css" | "unknown";
+  stylingApproach: "css-modules" | "plain-css" | "unknown";
 }
 
 // ─── Style changes ───
@@ -26,8 +26,6 @@ export interface StyleChange {
 export interface ElementDiff {
   element: ElementInfo;
   changes: StyleChange[];
-  /** Suggested Tailwind classes (if Tailwind detected) */
-  suggestedTailwind?: string;
   timestamp: number;
 }
 

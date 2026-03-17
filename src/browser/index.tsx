@@ -77,7 +77,6 @@ function VizTweakInner() {
   const [showResponsive, setShowResponsive] = useState(false);
   const [showLayoutDebugger, setShowLayoutDebugger] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [showShortcuts, setShowShortcuts] = useState(false);
   const [colorBlindMode, setColorBlindMode] = useState<string | null>(null);
   const [themeMode, setThemeMode] = useState<ThemeMode>(getStoredTheme);
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
@@ -313,10 +312,6 @@ function VizTweakInner() {
       }
       if (e.key === "4" && !e.ctrlKey && !e.metaKey && selectedElement) {
         setActiveTab("chat");
-      }
-      if (e.key === "?" || (e.shiftKey && e.key === "/")) {
-        e.preventDefault();
-        setShowShortcuts((prev) => !prev);
       }
     };
     document.addEventListener("keydown", handler);
@@ -807,104 +802,6 @@ function VizTweakInner() {
       )}
 
       {/* ─── Keyboard Shortcuts Help ─── */}
-      {showShortcuts && (
-        <div
-          data-viztweak=""
-          onClick={() => setShowShortcuts(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 2147483646,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.3)",
-            backdropFilter: "blur(2px)",
-            fontFamily: "var(--vt-font)",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "var(--vt-panel-bg)",
-              border: "1px solid var(--vt-border)",
-              borderRadius: "12px",
-              padding: "20px 24px",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-              width: "320px",
-              maxHeight: "80vh",
-              overflowY: "auto",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--vt-text-primary)" }}>Keyboard Shortcuts</span>
-              <button onClick={() => setShowShortcuts(false)} style={{ border: "none", background: "none", cursor: "pointer", color: "var(--vt-text-secondary)", padding: "2px" }}>
-                <IconClose size={14} />
-              </button>
-            </div>
-            {[
-              ["V", "Start inspecting"],
-              ["Escape", "Deselect / stop inspecting"],
-              ["⌘ Shift V", "Toggle inspector"],
-              ["⌘ Z", "Undo"],
-              ["⌘ Shift Z", "Redo"],
-              ["1", "Design tab"],
-              ["2", "Layers tab"],
-              ["3", "Inspect tab"],
-              ["4", "Chat tab"],
-              ["?", "Show shortcuts"],
-            ].map(([key, desc]) => (
-              <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 0" }}>
-                <span style={{ fontSize: "11px", color: "var(--vt-text-secondary)" }}>{desc}</span>
-                <kbd style={{
-                  fontSize: "10px",
-                  fontFamily: "var(--vt-font-mono, monospace)",
-                  background: "var(--vt-hover)",
-                  border: "1px solid var(--vt-border)",
-                  borderRadius: "4px",
-                  padding: "2px 6px",
-                  color: "var(--vt-text-primary)",
-                  whiteSpace: "nowrap",
-                }}>
-                  {key}
-                </kbd>
-              </div>
-            ))}
-
-            {/* Color blind simulation section */}
-            <div style={{ height: "1px", background: "var(--vt-border)", margin: "12px 0" }} />
-            <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--vt-text-primary)", marginBottom: "8px", display: "block" }}>Color Vision Simulation</span>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-              {[
-                { id: null, label: "Normal" },
-                { id: "deuteranopia", label: "Deuteranopia" },
-                { id: "protanopia", label: "Protanopia" },
-                { id: "tritanopia", label: "Tritanopia" },
-                { id: "monochromacy", label: "Monochromacy" },
-              ].map((mode) => (
-                <button
-                  key={mode.id ?? "normal"}
-                  onClick={() => setColorBlindMode(mode.id)}
-                  style={{
-                    fontSize: "10px",
-                    fontFamily: "var(--vt-font)",
-                    padding: "3px 8px",
-                    borderRadius: "var(--vt-input-radius)",
-                    border: "1px solid var(--vt-border)",
-                    cursor: "pointer",
-                    background: colorBlindMode === mode.id ? "var(--vt-accent-bg)" : "var(--vt-surface)",
-                    color: colorBlindMode === mode.id ? "var(--vt-accent)" : "var(--vt-text-secondary)",
-                    fontWeight: colorBlindMode === mode.id ? 600 : 400,
-                  }}
-                >
-                  {mode.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ─── Floating pill toolbar ─── */}
       {(() => {
         const expanded = inspecting || selectedElement !== null;
@@ -997,10 +894,10 @@ function VizTweakInner() {
                   tooltip={themeMode === "dark" ? "Light mode" : "Dark mode"}
                   onClick={handleToggleTheme}
                 />
-                <PillBtn
-                  icon={<span style={{ fontSize: "14px", fontWeight: 700, lineHeight: 1 }}>?</span>}
-                  tooltip="Keyboard shortcuts"
-                  onClick={() => setShowShortcuts(true)}
+                <ColorVisionDropdown
+                  active={colorBlindMode}
+                  onChange={setColorBlindMode}
+                  themeMode={themeMode}
                 />
                 {selectedElement && (
                   <PillBtn icon={<IconClose size={14} />} tooltip="Close panel (Esc)" onClick={handleClose} />
@@ -1064,6 +961,95 @@ function PillBtn({
     >
       {icon}
     </button>
+  );
+}
+
+// ─── Color Vision Simulation Dropdown ──────────────────────────
+
+const COLOR_VISION_MODES = [
+  { id: null, label: "Normal" },
+  { id: "deuteranopia", label: "Deuteranopia" },
+  { id: "protanopia", label: "Protanopia" },
+  { id: "tritanopia", label: "Tritanopia" },
+  { id: "monochromacy", label: "Monochromacy" },
+] as const;
+
+function ColorVisionDropdown({
+  active,
+  onChange,
+  themeMode,
+}: {
+  active: string | null;
+  onChange: (mode: string | null) => void;
+  themeMode: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <PillBtn
+        icon={<IconAccessibility size={14} />}
+        tooltip="Color vision simulation"
+        onClick={() => setOpen((p) => !p)}
+        active={active !== null}
+      />
+      {open && (
+        <div
+          data-viztweak=""
+          {...{ [THEME_MODE_ATTR]: themeMode }}
+          style={{
+            position: "absolute",
+            bottom: "38px",
+            right: 0,
+            background: "var(--vt-panel-bg)",
+            border: "1px solid var(--vt-border)",
+            borderRadius: "8px",
+            padding: "4px",
+            boxShadow: "var(--vt-shadow-md)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "2px",
+            minWidth: "140px",
+            fontFamily: "var(--vt-font)",
+            zIndex: 10,
+          }}
+        >
+          {COLOR_VISION_MODES.map((mode) => {
+            const isActive = active === mode.id;
+            return (
+              <button
+                key={mode.id ?? "normal"}
+                onClick={() => { onChange(mode.id); setOpen(false); }}
+                style={{
+                  fontSize: "11px",
+                  fontFamily: "var(--vt-font)",
+                  padding: "5px 8px",
+                  borderRadius: "var(--vt-input-radius)",
+                  border: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  background: isActive ? "var(--vt-accent-bg)" : "transparent",
+                  color: isActive ? "var(--vt-accent)" : "var(--vt-text-primary)",
+                  fontWeight: isActive ? 600 : 400,
+                }}
+              >
+                {mode.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 

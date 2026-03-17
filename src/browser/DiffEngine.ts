@@ -1,6 +1,5 @@
 import type { ElementDiff, StyleChange } from "../shared/types.js";
 import { resolveElement } from "./ElementResolver.js";
-import { cssPropToTailwind } from "./StyleDetector.js";
 
 /**
  * Tracks and generates structured diffs of visual changes.
@@ -50,21 +49,9 @@ export class DiffEngine {
 
     const elementInfo = resolveElement(el);
 
-    // Generate suggested Tailwind classes if applicable
-    let suggestedTailwind: string | undefined;
-    if (elementInfo.stylingApproach === "tailwind") {
-      const twClasses = changes
-        .map((c) => cssPropToTailwind(c.property, c.after))
-        .filter(Boolean);
-      if (twClasses.length > 0) {
-        suggestedTailwind = twClasses.join(" ");
-      }
-    }
-
     return {
       element: elementInfo,
       changes,
-      suggestedTailwind,
       timestamp: Date.now(),
     };
   }
