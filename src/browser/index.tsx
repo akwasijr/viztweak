@@ -24,7 +24,7 @@ import { TokenExtractor } from "./TokenExtractor.js";
 import { ColorPalette } from "./ColorPalette.js";
 import { GridFlexDebugger } from "./GridFlexDebugger.js";
 import { DiffReporter } from "./DiffReporter.js";
-import { IconInspect, IconClose, IconSend, IconDesign, IconLayers, IconBoxModel, IconResponsive, IconUndo, IconRedo, IconReset, IconCopy, IconPanelLeft, IconPanelRight, IconLayoutGrid, IconCode, IconChat, IconPalette, IconSpacing, IconType, IconState, IconAccessibility, IconCornerRadius } from "./icons.js";
+import { IconInspect, IconClose, IconSend, IconDesign, IconLayers, IconBoxModel, IconResponsive, IconUndo, IconRedo, IconReset, IconCopy, IconPanelLeft, IconPanelRight, IconLayoutGrid, IconCode, IconChat, IconPalette, IconSpacing, IconType, IconState, IconAccessibility, IconCornerRadius, IconFrame } from "./icons.js";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -904,6 +904,7 @@ function VizTweakInner() {
                 <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
 
                 <PillBtn icon={<IconCopy size={15} />} tooltip="Copy styles" onClick={handleCopyStyles} disabled={!selectedElement} />
+                <PillBtn icon={<IconFrame size={15} />} tooltip="Select page" onClick={() => handleSelect(document.body)} active={selectedElement === document.body} />
                 <PillBtn icon={<IconUndo size={15} />} tooltip="Undo (Ctrl+Z)" onClick={handleUndo} disabled={undoStack.length === 0} />
                 <PillBtn icon={<IconRedo size={15} />} tooltip="Redo (Ctrl+Shift+Z)" onClick={handleRedo} disabled={redoStack.length === 0} />
                 <PillBtn icon={<IconReset size={15} />} tooltip="Reset all changes" onClick={handleReset} disabled={!selectedElement} />

@@ -83,8 +83,8 @@ function applyViewportWidth(width: number) {
 
   if (width === 0) {
     // Full width — remove constraints
+    restoreFixedElements();
     if (wrapper) {
-      // Unwrap: move children back to body
       while (wrapper.firstChild) {
         wrapper.parentNode?.insertBefore(wrapper.firstChild, wrapper);
       }
@@ -111,6 +111,18 @@ function applyViewportWidth(width: number) {
       min-height: 100vh !important;
       background: inherit !important;
     }
+    /* Force fixed-positioned page elements into the wrapper */
+    #${WRAPPER_ID} [style*="position: fixed"],
+    #${WRAPPER_ID} [style*="position:fixed"] {
+      position: absolute !important;
+    }
+    /* Carbon-specific: SideNav and header use fixed positioning */
+    #${WRAPPER_ID} .cds--side-nav,
+    #${WRAPPER_ID} .bx--side-nav,
+    #${WRAPPER_ID} header.cds--header,
+    #${WRAPPER_ID} header.bx--header {
+      position: absolute !important;
+    }
   `;
   document.documentElement.style.overflow = "auto";
 
@@ -118,7 +130,6 @@ function applyViewportWidth(width: number) {
     wrapper = document.createElement("div");
     wrapper.id = WRAPPER_ID;
 
-    // Wrap all body children except viztweak elements and scripts
     const children = Array.from(document.body.children).filter(
       (c) =>
         !c.hasAttribute("data-viztweak") &&
@@ -132,6 +143,25 @@ function applyViewportWidth(width: number) {
       wrapper.appendChild(child);
     }
   }
+
+  // Also find any computed fixed-position elements and override them
+  const fixedEls = wrapper.querySelectorAll("*");
+  fixedEls.forEach((el) => {
+    if ((el as HTMLElement).hasAttribute("data-viztweak")) return;
+    const pos = window.getComputedStyle(el).position;
+    if (pos === "fixed") {
+      (el as HTMLElement).style.setProperty("position", "absolute", "important");
+      (el as HTMLElement).setAttribute("data-vt-was-fixed", "true");
+    }
+  });
+}
+
+// Restore any elements we changed from fixed to absolute
+function restoreFixedElements() {
+  document.querySelectorAll("[data-vt-was-fixed]").forEach((el) => {
+    (el as HTMLElement).style.removeProperty("position");
+    el.removeAttribute("data-vt-was-fixed");
+  });
 }
 
 // ─── Component ────────────────────────────────────────────────
