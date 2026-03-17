@@ -140,17 +140,14 @@ export class DiffEngine {
   }
 
   /**
-   * Formats ALL changes across all elements as a structured text block
-   * suitable for pasting into a coding agent.
+   * Formats ALL changes as natural instructions an AI coding agent can act on.
    */
   formatAllChangesText(): string {
     const allDiffs = this.getAllDiffs();
     if (allDiffs.size === 0) return "No visual changes recorded.";
 
     const lines: string[] = [
-      "# VizTweak — Visual Changes",
-      "",
-      `Total: ${allDiffs.size} element(s) modified`,
+      "I made some visual changes in the browser using VizTweak. Please update the source code to match these changes.",
       "",
     ];
 
@@ -158,27 +155,45 @@ export class DiffEngine {
     for (const [el, changes] of allDiffs) {
       elemIdx++;
       const info = resolveElement(el);
-      const tag = `<${info.tagName}>`;
-      const name = info.componentName ? `${info.componentName} (${tag})` : tag;
-      const selector = info.selector;
+      const tag = info.tagName;
+      const changeEntries = Object.entries(changes);
 
-      lines.push(`## ${elemIdx}. ${name}`);
-      lines.push(`Selector: \`${selector}\``);
-      if (info.classList.length) lines.push(`Classes: \`${info.classList.join(" ")}\``);
-      lines.push("");
-      lines.push("| Property | Before | After |");
-      lines.push("|----------|--------|-------|");
+      // Build a natural description of what element this is
+      let elemDesc = "";
+      if (info.componentName) {
+        elemDesc = `the **${info.componentName}** component (\`<${tag}>\`)`;
+      } else if (info.classList.length > 0) {
+        elemDesc = `the \`<${tag}>\` element with class \`${info.classList[0]}\``;
+      } else {
+        elemDesc = `the \`<${tag}>\` element`;
+      }
 
-      for (const [prop, { original, current }] of Object.entries(changes)) {
+      // Selector hint for the agent to locate the element
+      lines.push(`**${elemIdx}.** On ${elemDesc} (selector: \`${info.selector}\`):`);
+
+      if (info.stylingApproach !== "unknown") {
+        lines.push(`   Styling: ${info.stylingApproach}`);
+      }
+
+      // Group changes into natural sentences
+      for (const [prop, { original, current }] of changeEntries) {
         const cssName = prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
-        lines.push(`| ${cssName} | ${original} | ${current} |`);
+        // Make the change description readable
+        const shortOriginal = truncateValue(original);
+        const shortCurrent = truncateValue(current);
+        lines.push(`   - Change \`${cssName}\` from \`${shortOriginal}\` to \`${shortCurrent}\``);
       }
       lines.push("");
     }
 
-    lines.push("---");
-    lines.push("Apply these changes to the corresponding CSS/component files in the project.");
+    lines.push("Find the matching elements in the source code and update their styles accordingly. Use the selector and class names to locate each element.");
 
     return lines.join("\n");
   }
+}
+
+/** Shorten long computed values like rgb colors or matrices for readability */
+function truncateValue(val: string): string {
+  if (val.length <= 60) return val;
+  return val.substring(0, 57) + "...";
 }
