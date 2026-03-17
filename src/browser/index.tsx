@@ -871,7 +871,6 @@ function VizTweakInner() {
                 <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
 
                 <PillBtn icon={<IconCopy size={15} />} tooltip="Copy styles" onClick={handleCopyStyles} disabled={!selectedElement} />
-                <PillBtn icon={<IconFrame size={15} />} tooltip="Select page" onClick={() => handleSelect(document.body)} active={selectedElement === document.body} />
                 <PillBtn icon={<IconUndo size={15} />} tooltip="Undo (Ctrl+Z)" onClick={handleUndo} disabled={undoStack.length === 0} />
                 <PillBtn icon={<IconRedo size={15} />} tooltip="Redo (Ctrl+Shift+Z)" onClick={handleRedo} disabled={redoStack.length === 0} />
                 <PillBtn icon={<IconReset size={15} />} tooltip="Reset all changes" onClick={handleReset} disabled={!selectedElement} />
@@ -899,9 +898,6 @@ function VizTweakInner() {
                   onChange={setColorBlindMode}
                   themeMode={themeMode}
                 />
-                {selectedElement && (
-                  <PillBtn icon={<IconClose size={14} />} tooltip="Close panel (Esc)" onClick={handleClose} />
-                )}
               </>
             )}
           </div>

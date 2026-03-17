@@ -135,6 +135,35 @@ export function IconTextAlignJustify({ size, className }: IconProps) {
 
 // ─── Layout direction ────────────────────────────────────────
 
+export function IconBlock({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="3" y="3" width="10" height="10" rx="1.5" fill="none" />
+    </Svg>
+  );
+}
+
+export function IconInlineFlex({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="2" y="4" width="5" height="8" rx="1" fill="none" />
+      <line x1="9" y1="6" x2="9" y2="10" />
+      <line x1="7.5" y1="8" x2="10.5" y2="8" />
+    </Svg>
+  );
+}
+
+export function IconFlexLayout({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="1.5" y="3" width="4.5" height="10" rx="1" fill="none" />
+      <rect x="7.5" y="3" width="4.5" height="10" rx="1" fill="none" />
+      <line x1="13" y1="6" x2="13" y2="10" />
+      <line x1="11.5" y1="8" x2="14.5" y2="8" />
+    </Svg>
+  );
+}
+
 export function IconLayoutRow({ size, className }: IconProps) {
   return (
     <Svg size={size} className={className}>
@@ -272,6 +301,37 @@ export function IconCornerRadius({ size, className }: IconProps) {
   return (
     <Svg size={size} className={className}>
       <path d="M3 13V7a4 4 0 0 1 4-4h6" />
+    </Svg>
+  );
+}
+
+// ─── Expand / detail toggle ─────────────────────────────────
+
+export function IconExpandDetail({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <polyline points="4 8 8 4 12 8" fill="none" />
+      <polyline points="4 12 8 8 12 12" fill="none" />
+    </Svg>
+  );
+}
+
+export function IconPaddingH({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <line x1="3" y1="3" x2="3" y2="13" />
+      <line x1="13" y1="3" x2="13" y2="13" />
+      <circle cx="8" cy="8" r="2" fill="none" />
+    </Svg>
+  );
+}
+
+export function IconPaddingV({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <line x1="3" y1="3" x2="13" y2="3" />
+      <line x1="3" y1="13" x2="13" y2="13" />
+      <circle cx="8" cy="8" r="2" fill="none" />
     </Svg>
   );
 }

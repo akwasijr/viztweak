@@ -24,6 +24,12 @@ import {
   IconLayoutColumn,
   IconGrid,
   IconGear,
+  IconAlignLeft,
+  IconAlignCenterH,
+  IconAlignRight,
+  IconAlignTop,
+  IconAlignCenterV,
+  IconAlignBottom,
 } from "./icons.js";
 
 interface StylePanelProps {
@@ -88,7 +94,7 @@ const sectionBodyStyle: React.CSSProperties = {
   padding: "4px 12px 8px",
   display: "flex",
   flexDirection: "column",
-  gap: "4px",
+  gap: "6px",
 };
 
 const rowStyle: React.CSSProperties = {
@@ -134,13 +140,14 @@ export function StylePanel({
     position: true,
     layout: true,
     padding: true,
-    dimensions: true,
-    sizing: false,
+    margin: true,
+    size: true,
     appearance: true,
     fill: true,
-    stroke: true,
+    border: true,
+    shadow: false,
     typography: true,
-    effects: true,
+    filters: false,
   });
 
   // Editable values
@@ -185,17 +192,40 @@ export function StylePanel({
   const [borderRadius, setBorderRadius] = useState(() => px(cs.borderRadius));
 
   // Layout (flex/grid)
-  const displayVal = cs.display;
-  const isFlexOrGrid = displayVal === "flex" || displayVal === "inline-flex" || displayVal === "grid" || displayVal === "inline-grid";
+  const [display, setDisplay] = useState(() => cs.display || "block");
+  const isFlexOrGrid = display === "flex" || display === "inline-flex" || display === "grid" || display === "inline-grid";
   const [flexDirection, setFlexDirection] = useState(() => cs.flexDirection || "row");
   const [justifyContent, setJustifyContent] = useState(() => cs.justifyContent || "flex-start");
   const [alignItems, setAlignItems] = useState(() => cs.alignItems || "flex-start");
+  const [flexWrap, setFlexWrap] = useState(() => cs.flexWrap || "nowrap");
+  const [flexReverse, setFlexReverse] = useState(() =>
+    cs.flexDirection === "row-reverse" || cs.flexDirection === "column-reverse" ? "yes" : "no"
+  );
+
+  // Position type
+  const [positionType, setPositionType] = useState(() => cs.position || "static");
 
   // Sizing modes
   const [fillWidth, setFillWidth] = useState(false);
   const [hugWidth, setHugWidth] = useState(false);
   const [fillHeight, setFillHeight] = useState(false);
   const [hugHeight, setHugHeight] = useState(false);
+
+  // Padding/Margin detail expand
+  const [showPadDetail, setShowPadDetail] = useState(false);
+  const [showMarDetail, setShowMarDetail] = useState(false);
+
+  // Appearance extras
+  const [zIndex, setZIndex] = useState(() => cs.zIndex === "auto" ? "auto" : cs.zIndex);
+  const [overflow, setOverflow] = useState(() => cs.overflow || "visible");
+  const [showRadiusDetail, setShowRadiusDetail] = useState(false);
+  const [radiusTL, setRadiusTL] = useState(() => px(cs.borderTopLeftRadius));
+  const [radiusTR, setRadiusTR] = useState(() => px(cs.borderTopRightRadius));
+  const [radiusBR, setRadiusBR] = useState(() => px(cs.borderBottomRightRadius));
+  const [radiusBL, setRadiusBL] = useState(() => px(cs.borderBottomLeftRadius));
+
+  // Shadow
+  const [boxShadow, setBoxShadow] = useState(() => cs.boxShadow === "none" ? "" : cs.boxShadow);
 
   const showTypography = isTextElement(element);
 
@@ -229,6 +259,52 @@ export function StylePanel({
     });
   }, [element, elementInfo, wsClient]);
 
+  // Style helpers
+  const sectionLabelStyle: React.CSSProperties = {
+    fontSize: "13px",
+    fontWeight: 600,
+    color: "var(--vt-text-primary)",
+  };
+
+  const subLabelStyle: React.CSSProperties = {
+    fontSize: "var(--vt-font-size-label)",
+    color: "var(--vt-text-secondary)",
+    fontWeight: 400,
+  };
+
+  const expandBtnStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "20px",
+    height: "20px",
+    border: "none",
+    background: "transparent",
+    borderRadius: "var(--vt-input-radius)",
+    cursor: "pointer",
+    color: "var(--vt-text-secondary)",
+    padding: 0,
+    fontSize: "11px",
+    flexShrink: 0,
+  };
+
+  // Width/Height select options
+  const widthOptions = [
+    { value: w + "px", label: w + "px" },
+    { value: "100%", label: "Fill" },
+    { value: "auto", label: "Auto" },
+    { value: "fit-content", label: "Hug" },
+  ];
+  const heightOptions = [
+    { value: h + "px", label: h + "px" },
+    { value: "100%", label: "Fill" },
+    { value: "auto", label: "Auto" },
+    { value: "fit-content", label: "Hug" },
+  ];
+
+  const currentWidthValue = fillWidth ? "100%" : hugWidth ? "fit-content" : w + "px";
+  const currentHeightValue = fillHeight ? "100%" : hugHeight ? "fit-content" : h + "px";
+
   return (
     <div
       style={{
@@ -238,7 +314,7 @@ export function StylePanel({
         flexShrink: 0,
       }}
     >
-      {/* ── Position section ── */}
+      {/* ── 1. Position section ── */}
       <SectionHeader
         title="Position"
         expanded={expandedSections.position}
@@ -246,6 +322,53 @@ export function StylePanel({
       />
       {expandedSections.position && (
         <div style={sectionBodyStyle}>
+          {/* Alignment pill */}
+          <div style={rowStyle}>
+            <ToggleGroup
+              value=""
+              onChange={(v) => {
+                apply("text-align", v);
+              }}
+              options={[
+                { value: "left", icon: <IconAlignLeft size={12} />, tooltip: "Align Left" },
+                { value: "center", icon: <IconAlignCenterH size={12} />, tooltip: "Align Center" },
+                { value: "right", icon: <IconAlignRight size={12} />, tooltip: "Align Right" },
+              ]}
+            />
+            <div style={{ width: "4px" }} />
+            <ToggleGroup
+              value=""
+              onChange={(v) => {
+                apply("vertical-align", v);
+              }}
+              options={[
+                { value: "top", icon: <IconAlignTop size={12} />, tooltip: "Align Top" },
+                { value: "middle", icon: <IconAlignCenterV size={12} />, tooltip: "Align Middle" },
+                { value: "bottom", icon: <IconAlignBottom size={12} />, tooltip: "Align Bottom" },
+              ]}
+            />
+          </div>
+          {/* Position type */}
+          <div style={rowStyle}>
+            <span style={subLabelStyle}>Type</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <SelectInput
+                value={positionType}
+                onChange={(v) => {
+                  setPositionType(v);
+                  apply("position", v);
+                }}
+                options={[
+                  { value: "static", label: "Static" },
+                  { value: "relative", label: "Relative" },
+                  { value: "absolute", label: "Absolute" },
+                  { value: "fixed", label: "Fixed" },
+                  { value: "sticky", label: "Sticky" },
+                ]}
+              />
+            </div>
+          </div>
+          {/* X / Y */}
           <DualInput
             leftLabel="X"
             leftValue={x}
@@ -260,6 +383,7 @@ export function StylePanel({
               apply("top", v + "px");
             }}
           />
+          {/* Rotation */}
           <NumericInput
             label="R"
             value={rotation}
@@ -273,17 +397,86 @@ export function StylePanel({
       )}
       <div style={dividerStyle} />
 
-      {/* ── Layout section (only for flex/grid containers) ── */}
-      {isFlexOrGrid && (
-        <>
-          <SectionHeader
-            title="Layout"
-            expanded={expandedSections.layout}
-            onToggle={() => toggleSection("layout")}
-          />
-          {expandedSections.layout && (
-            <div style={sectionBodyStyle}>
+      {/* ── 2. Layout section (always shown) ── */}
+      <SectionHeader
+        title="Layout"
+        expanded={expandedSections.layout}
+        onToggle={() => toggleSection("layout")}
+      />
+      {expandedSections.layout && (
+        <div style={sectionBodyStyle}>
+          {/* Display toggle */}
+          <div style={rowStyle}>
+            <span style={subLabelStyle}>Display</span>
+            <ToggleGroup
+              value={display}
+              onChange={(v) => {
+                setDisplay(v);
+                apply("display", v);
+              }}
+              options={[
+                {
+                  value: "block",
+                  icon: <span style={{ fontSize: "10px", fontWeight: 600, lineHeight: 1 }}>□</span>,
+                  tooltip: "Block",
+                },
+                {
+                  value: "inline-flex",
+                  icon: <span style={{ fontSize: "10px", fontWeight: 600, lineHeight: 1 }}>□+</span>,
+                  tooltip: "Inline Flex",
+                },
+                {
+                  value: "flex",
+                  icon: <IconLayoutRow size={12} />,
+                  tooltip: "Flex",
+                },
+                {
+                  value: "grid",
+                  icon: <IconGrid size={12} />,
+                  tooltip: "Grid",
+                },
+              ]}
+            />
+          </div>
+
+          {/* Flex/Grid-specific controls */}
+          {isFlexOrGrid && (
+            <>
+              {/* Alignment grid + Gap side by side */}
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                <div>
+                  <span style={subLabelStyle}>Alignment</span>
+                  <div style={{ marginTop: "4px" }}>
+                    <AlignmentGrid
+                      justify={justifyContent}
+                      align={alignItems}
+                      onChange={(j, a) => {
+                        setJustifyContent(j);
+                        setAlignItems(a);
+                        apply("justify-content", j);
+                        apply("align-items", a);
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span style={subLabelStyle}>Gap</span>
+                  <div style={{ marginTop: "4px" }}>
+                    <NumericInput
+                      value={gap}
+                      suffix="px"
+                      min={0}
+                      onChange={(v) => {
+                        setGap(v);
+                        apply("gap", v + "px");
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* Direction toggle */}
               <div style={rowStyle}>
+                <span style={subLabelStyle}>Direction</span>
                 <ToggleGroup
                   value={flexDirection}
                   onChange={(v) => {
@@ -293,61 +486,93 @@ export function StylePanel({
                   options={[
                     { value: "row", icon: <IconLayoutRow size={12} />, tooltip: "Row" },
                     { value: "column", icon: <IconLayoutColumn size={12} />, tooltip: "Column" },
-                    { value: "wrap", icon: <IconGrid size={12} />, tooltip: "Wrap" },
                   ]}
                 />
-                <div style={{ marginLeft: "8px" }}>
-                  <AlignmentGrid
-                    justify={justifyContent}
-                    align={alignItems}
-                    onChange={(j, a) => {
-                      setJustifyContent(j);
-                      setAlignItems(a);
-                      apply("justify-content", j);
-                      apply("align-items", a);
+              </div>
+              {/* Reverse + Wrap */}
+              <div style={{ display: "flex", gap: "4px" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <SelectInput
+                    label="Reverse"
+                    value={flexReverse}
+                    onChange={(v) => {
+                      setFlexReverse(v);
+                      const base = flexDirection.replace("-reverse", "");
+                      const dir = v === "yes" ? base + "-reverse" : base;
+                      setFlexDirection(dir);
+                      apply("flex-direction", dir);
                     }}
+                    options={[
+                      { value: "no", label: "No" },
+                      { value: "yes", label: "Yes" },
+                    ]}
+                  />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <SelectInput
+                    label="Wrap"
+                    value={flexWrap}
+                    onChange={(v) => {
+                      setFlexWrap(v);
+                      apply("flex-wrap", v);
+                    }}
+                    options={[
+                      { value: "nowrap", label: "Nowrap" },
+                      { value: "wrap", label: "Wrap" },
+                      { value: "wrap-reverse", label: "Wrap Reverse" },
+                    ]}
                   />
                 </div>
               </div>
-              <NumericInput
-                label="Gap"
-                value={gap}
-                suffix="px"
-                min={0}
-                onChange={(v) => {
-                  setGap(v);
-                  apply("gap", v + "px");
-                }}
-              />
-            </div>
+            </>
           )}
-          <div style={dividerStyle} />
-        </>
+        </div>
       )}
+      <div style={dividerStyle} />
 
-      {/* ── Padding section ── */}
+      {/* ── 3. Padding section ── */}
       <SectionHeader
         title="Padding"
         expanded={expandedSections.padding}
         onToggle={() => toggleSection("padding")}
-        onAdd={() => {}}
-        actionIcon={<IconGear size={12} />}
       />
       {expandedSections.padding && (
         <div style={sectionBodyStyle}>
-          <div
-            style={{
-              border: "1px dashed var(--vt-border)",
-              borderRadius: "var(--vt-input-radius)",
-              padding: "4px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "2px",
-            }}
-          >
-            <div style={{ width: "52px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <DualInput
+                leftLabel="|○|"
+                leftValue={padLeft}
+                onLeftChange={(v) => {
+                  setPadLeft(v);
+                  setPadRight(v);
+                  apply("padding-left", v + "px");
+                  apply("padding-right", v + "px");
+                }}
+                leftMin={0}
+                rightLabel="≡"
+                rightValue={padTop}
+                onRightChange={(v) => {
+                  setPadTop(v);
+                  setPadBottom(v);
+                  apply("padding-top", v + "px");
+                  apply("padding-bottom", v + "px");
+                }}
+                rightMin={0}
+              />
+            </div>
+            <button
+              title={showPadDetail ? "Collapse" : "Expand individual sides"}
+              onClick={() => setShowPadDetail(!showPadDetail)}
+              style={expandBtnStyle}
+            >
+              ⌐⌐
+            </button>
+          </div>
+          {showPadDetail && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
               <NumericInput
+                label="T"
                 value={padTop}
                 min={0}
                 onChange={(v) => {
@@ -355,47 +580,17 @@ export function StylePanel({
                   apply("padding-top", v + "px");
                 }}
               />
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                width: "100%",
-              }}
-            >
-              <div style={{ width: "52px" }}>
-                <NumericInput
-                  value={padLeft}
-                  min={0}
-                  onChange={(v) => {
-                    setPadLeft(v);
-                    apply("padding-left", v + "px");
-                  }}
-                />
-              </div>
-              <div
-                style={{
-                  flex: 1,
-                  height: "16px",
-                  margin: "0 4px",
-                  border: "1px solid var(--vt-border)",
-                  borderRadius: "2px",
+              <NumericInput
+                label="R"
+                value={padRight}
+                min={0}
+                onChange={(v) => {
+                  setPadRight(v);
+                  apply("padding-right", v + "px");
                 }}
               />
-              <div style={{ width: "52px" }}>
-                <NumericInput
-                  value={padRight}
-                  min={0}
-                  onChange={(v) => {
-                    setPadRight(v);
-                    apply("padding-right", v + "px");
-                  }}
-                />
-              </div>
-            </div>
-            <div style={{ width: "52px" }}>
               <NumericInput
+                label="B"
                 value={padBottom}
                 min={0}
                 onChange={(v) => {
@@ -403,33 +598,62 @@ export function StylePanel({
                   apply("padding-bottom", v + "px");
                 }}
               />
-            </div>
-          </div>
-          {/* Margin */}
-          <div
-            style={{
-              fontSize: "var(--vt-font-size-label)",
-              color: "var(--vt-text-secondary)",
-              marginTop: "4px",
-              marginBottom: "2px",
-              fontWeight: 500,
-            }}
-          >
-            Margin
-          </div>
-          <div
-            style={{
-              border: "1px dashed var(--vt-border)",
-              borderRadius: "var(--vt-input-radius)",
-              padding: "4px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "2px",
-            }}
-          >
-            <div style={{ width: "52px" }}>
               <NumericInput
+                label="L"
+                value={padLeft}
+                min={0}
+                onChange={(v) => {
+                  setPadLeft(v);
+                  apply("padding-left", v + "px");
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+      <div style={dividerStyle} />
+
+      {/* ── 4. Margin section ── */}
+      <SectionHeader
+        title="Margin"
+        expanded={expandedSections.margin}
+        onToggle={() => toggleSection("margin")}
+      />
+      {expandedSections.margin && (
+        <div style={sectionBodyStyle}>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <DualInput
+                leftLabel="|○|"
+                leftValue={marLeft}
+                onLeftChange={(v) => {
+                  setMarLeft(v);
+                  setMarRight(v);
+                  apply("margin-left", v + "px");
+                  apply("margin-right", v + "px");
+                }}
+                rightLabel="≡"
+                rightValue={marTop}
+                onRightChange={(v) => {
+                  setMarTop(v);
+                  setMarBottom(v);
+                  apply("margin-top", v + "px");
+                  apply("margin-bottom", v + "px");
+                }}
+              />
+            </div>
+            <button
+              title={showMarDetail ? "Collapse" : "Expand individual sides"}
+              onClick={() => setShowMarDetail(!showMarDetail)}
+              style={expandBtnStyle}
+            >
+              ⌐⌐
+            </button>
+          </div>
+          {showMarDetail && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
+              <NumericInput
+                label="T"
                 value={marTop}
                 min={0}
                 onChange={(v) => {
@@ -437,47 +661,17 @@ export function StylePanel({
                   apply("margin-top", v + "px");
                 }}
               />
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                width: "100%",
-              }}
-            >
-              <div style={{ width: "52px" }}>
-                <NumericInput
-                  value={marLeft}
-                  min={0}
-                  onChange={(v) => {
-                    setMarLeft(v);
-                    apply("margin-left", v + "px");
-                  }}
-                />
-              </div>
-              <div
-                style={{
-                  flex: 1,
-                  height: "16px",
-                  margin: "0 4px",
-                  border: "1px solid var(--vt-border)",
-                  borderRadius: "2px",
+              <NumericInput
+                label="R"
+                value={marRight}
+                min={0}
+                onChange={(v) => {
+                  setMarRight(v);
+                  apply("margin-right", v + "px");
                 }}
               />
-              <div style={{ width: "52px" }}>
-                <NumericInput
-                  value={marRight}
-                  min={0}
-                  onChange={(v) => {
-                    setMarRight(v);
-                    apply("margin-right", v + "px");
-                  }}
-                />
-              </div>
-            </div>
-            <div style={{ width: "52px" }}>
               <NumericInput
+                label="B"
                 value={marBottom}
                 min={0}
                 onChange={(v) => {
@@ -485,105 +679,87 @@ export function StylePanel({
                   apply("margin-bottom", v + "px");
                 }}
               />
+              <NumericInput
+                label="L"
+                value={marLeft}
+                min={0}
+                onChange={(v) => {
+                  setMarLeft(v);
+                  apply("margin-left", v + "px");
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+      <div style={dividerStyle} />
+
+      {/* ── 5. Size section ── */}
+      <SectionHeader
+        title="Size"
+        expanded={expandedSections.size}
+        onToggle={() => toggleSection("size")}
+        onAdd={() => {}}
+      />
+      {expandedSections.size && (
+        <div style={sectionBodyStyle}>
+          <div style={{ display: "flex", gap: "4px" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={subLabelStyle}>Width</span>
+              <div style={{ marginTop: "2px" }}>
+                <SelectInput
+                  value={currentWidthValue}
+                  onChange={(v) => {
+                    if (v === "100%") {
+                      setFillWidth(true);
+                      setHugWidth(false);
+                    } else if (v === "fit-content") {
+                      setFillWidth(false);
+                      setHugWidth(true);
+                    } else if (v === "auto") {
+                      setFillWidth(false);
+                      setHugWidth(false);
+                    } else {
+                      setFillWidth(false);
+                      setHugWidth(false);
+                    }
+                    apply("width", v);
+                  }}
+                  options={widthOptions}
+                />
+              </div>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={subLabelStyle}>Height</span>
+              <div style={{ marginTop: "2px" }}>
+                <SelectInput
+                  value={currentHeightValue}
+                  onChange={(v) => {
+                    if (v === "100%") {
+                      setFillHeight(true);
+                      setHugHeight(false);
+                    } else if (v === "fit-content") {
+                      setFillHeight(false);
+                      setHugHeight(true);
+                    } else if (v === "auto") {
+                      setFillHeight(false);
+                      setHugHeight(false);
+                    } else {
+                      setFillHeight(false);
+                      setHugHeight(false);
+                    }
+                    apply("height", v);
+                  }}
+                  options={heightOptions}
+                />
+              </div>
             </div>
           </div>
         </div>
       )}
       <div style={dividerStyle} />
 
-      {/* ── Dimensions section ── */}
-      <SectionHeader
-        title="Dimensions"
-        expanded={expandedSections.dimensions}
-        onToggle={() => toggleSection("dimensions")}
-      />
-      {expandedSections.dimensions && (
-        <div style={sectionBodyStyle}>
-          <DualInput
-            leftLabel="W"
-            leftValue={w}
-            onLeftChange={(v) => {
-              setW(v);
-              apply("width", v + "px");
-            }}
-            leftMin={0}
-            rightLabel="H"
-            rightValue={h}
-            onRightChange={(v) => {
-              setH(v);
-              apply("height", v + "px");
-            }}
-            rightMin={0}
-          />
-        </div>
-      )}
-      <div style={dividerStyle} />
-
-      {/* ── Sizing section ── */}
-      <SectionHeader
-        title="Sizing"
-        expanded={expandedSections.sizing}
-        onToggle={() => toggleSection("sizing")}
-      />
-      {expandedSections.sizing && (
-        <div style={sectionBodyStyle}>
-          <CheckboxRow
-            label="Fill width"
-            checked={fillWidth}
-            onChange={(v) => {
-              setFillWidth(v);
-              if (v) {
-                setHugWidth(false);
-                apply("width", "100%");
-              } else {
-                apply("width", w + "px");
-              }
-            }}
-          />
-          <CheckboxRow
-            label="Hug width"
-            checked={hugWidth}
-            onChange={(v) => {
-              setHugWidth(v);
-              if (v) {
-                setFillWidth(false);
-                apply("width", "fit-content");
-              } else {
-                apply("width", w + "px");
-              }
-            }}
-          />
-          <CheckboxRow
-            label="Fill height"
-            checked={fillHeight}
-            onChange={(v) => {
-              setFillHeight(v);
-              if (v) {
-                setHugHeight(false);
-                apply("height", "100%");
-              } else {
-                apply("height", h + "px");
-              }
-            }}
-          />
-          <CheckboxRow
-            label="Hug height"
-            checked={hugHeight}
-            onChange={(v) => {
-              setHugHeight(v);
-              if (v) {
-                setFillHeight(false);
-                apply("height", "auto");
-              } else {
-                apply("height", h + "px");
-              }
-            }}
-          />
-        </div>
-      )}
-      <div style={dividerStyle} />
-
-      {/* ── Appearance section ── */}
+      {/* ── 6. Appearance section ── */}
       <SectionHeader
         title="Appearance"
         expanded={expandedSections.appearance}
@@ -591,30 +767,145 @@ export function StylePanel({
       />
       {expandedSections.appearance && (
         <div style={sectionBodyStyle}>
-          <DualInput
-            leftLabel="%"
-            leftValue={opacity}
-            onLeftChange={(v) => {
-              setOpacity(v);
-              apply("opacity", String(v / 100));
-            }}
-            leftMin={0}
-            leftMax={100}
-            leftSuffix="%"
-            rightLabel="R"
-            rightValue={borderRadius}
-            onRightChange={(v) => {
-              setBorderRadius(v);
-              apply("border-radius", v + "px");
-            }}
-            rightMin={0}
-            rightSuffix="px"
-          />
+          {/* Opacity + Z-index */}
+          <div style={{ display: "flex", gap: "4px" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={subLabelStyle}>Opacity</span>
+              <div style={{ marginTop: "2px" }}>
+                <NumericInput
+                  value={opacity}
+                  suffix="%"
+                  min={0}
+                  max={100}
+                  onChange={(v) => {
+                    setOpacity(v);
+                    apply("opacity", String(v / 100));
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={subLabelStyle}>Z index</span>
+              <div style={{ marginTop: "2px" }}>
+                <input
+                  value={zIndex}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setZIndex(val);
+                    apply("z-index", val);
+                  }}
+                  style={{
+                    width: "100%",
+                    height: "var(--vt-input-height)",
+                    background: "var(--vt-input-bg)",
+                    border: "1px solid var(--vt-border)",
+                    borderRadius: "var(--vt-input-radius)",
+                    color: "var(--vt-text-primary)",
+                    fontSize: "var(--vt-font-size-input)",
+                    padding: "0 6px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+          {/* Corner radius */}
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <span style={{ display: "flex", alignItems: "center", color: "var(--vt-text-secondary)", flexShrink: 0 }}>
+              <IconCornerRadius size={12} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <NumericInput
+                value={borderRadius}
+                suffix="px"
+                min={0}
+                onChange={(v) => {
+                  setBorderRadius(v);
+                  setRadiusTL(v);
+                  setRadiusTR(v);
+                  setRadiusBR(v);
+                  setRadiusBL(v);
+                  apply("border-radius", v + "px");
+                }}
+              />
+            </div>
+            <button
+              title={showRadiusDetail ? "Collapse" : "Expand individual corners"}
+              onClick={() => setShowRadiusDetail(!showRadiusDetail)}
+              style={expandBtnStyle}
+            >
+              ⌐⌐
+            </button>
+          </div>
+          {showRadiusDetail && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
+              <NumericInput
+                label="TL"
+                value={radiusTL}
+                suffix="px"
+                min={0}
+                onChange={(v) => {
+                  setRadiusTL(v);
+                  apply("border-top-left-radius", v + "px");
+                }}
+              />
+              <NumericInput
+                label="TR"
+                value={radiusTR}
+                suffix="px"
+                min={0}
+                onChange={(v) => {
+                  setRadiusTR(v);
+                  apply("border-top-right-radius", v + "px");
+                }}
+              />
+              <NumericInput
+                label="BR"
+                value={radiusBR}
+                suffix="px"
+                min={0}
+                onChange={(v) => {
+                  setRadiusBR(v);
+                  apply("border-bottom-right-radius", v + "px");
+                }}
+              />
+              <NumericInput
+                label="BL"
+                value={radiusBL}
+                suffix="px"
+                min={0}
+                onChange={(v) => {
+                  setRadiusBL(v);
+                  apply("border-bottom-left-radius", v + "px");
+                }}
+              />
+            </div>
+          )}
+          {/* Overflow */}
+          <div style={rowStyle}>
+            <span style={subLabelStyle}>Overflow</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <SelectInput
+                value={overflow}
+                onChange={(v) => {
+                  setOverflow(v);
+                  apply("overflow", v);
+                }}
+                options={[
+                  { value: "visible", label: "Visible" },
+                  { value: "hidden", label: "Hidden" },
+                  { value: "scroll", label: "Scroll" },
+                  { value: "auto", label: "Auto" },
+                ]}
+              />
+            </div>
+          </div>
         </div>
       )}
       <div style={dividerStyle} />
 
-      {/* ── Fill section ── */}
+      {/* ── 7. Fill section ── */}
       <SectionHeader
         title="Fill"
         expanded={expandedSections.fill}
@@ -662,11 +953,11 @@ export function StylePanel({
       )}
       <div style={dividerStyle} />
 
-      {/* ── Stroke section ── */}
+      {/* ── 8. Border section ── */}
       <SectionHeader
-        title="Stroke"
-        expanded={expandedSections.stroke}
-        onToggle={() => toggleSection("stroke")}
+        title="Border"
+        expanded={expandedSections.border}
+        onToggle={() => toggleSection("border")}
         onAdd={() => {
           if (!showStroke) {
             setShowStroke(true);
@@ -679,7 +970,7 @@ export function StylePanel({
           }
         }}
       />
-      {expandedSections.stroke && showStroke && (
+      {expandedSections.border && showStroke && (
         <div style={sectionBodyStyle}>
           <ColorInput
             value={borderColor}
@@ -730,7 +1021,45 @@ export function StylePanel({
       )}
       <div style={dividerStyle} />
 
-      {/* ── Typography section (text elements only) ── */}
+      {/* ── 9. Shadow section ── */}
+      <SectionHeader
+        title="Shadow"
+        expanded={expandedSections.shadow}
+        onToggle={() => toggleSection("shadow")}
+        onAdd={() => {
+          if (!boxShadow) {
+            const defaultShadow = "0px 2px 4px rgba(0,0,0,0.1)";
+            setBoxShadow(defaultShadow);
+            apply("box-shadow", defaultShadow);
+          }
+        }}
+      />
+      {expandedSections.shadow && (
+        <div style={sectionBodyStyle}>
+          {boxShadow ? (
+            <div
+              style={{
+                fontSize: "var(--vt-font-size-input)",
+                color: "var(--vt-text-primary)",
+                background: "var(--vt-input-bg)",
+                border: "1px solid var(--vt-border)",
+                borderRadius: "var(--vt-input-radius)",
+                padding: "4px 6px",
+                wordBreak: "break-all",
+              }}
+            >
+              {boxShadow}
+            </div>
+          ) : (
+            <span style={{ fontSize: "var(--vt-font-size-label)", color: "var(--vt-text-disabled)" }}>
+              No shadow
+            </span>
+          )}
+        </div>
+      )}
+      <div style={dividerStyle} />
+
+      {/* ── 10. Typography section (text elements only) ── */}
       {showTypography && (
         <>
           <SectionHeader
@@ -808,62 +1137,18 @@ export function StylePanel({
         </>
       )}
 
-      {/* ── Effects section ── */}
+      {/* ── 11. Filters section ── */}
       <SectionHeader
-        title="Effects"
-        expanded={expandedSections.effects}
-        onToggle={() => toggleSection("effects")}
+        title="Filters"
+        expanded={expandedSections.filters}
+        onToggle={() => toggleSection("filters")}
         onAdd={() => {}}
       />
-      {expandedSections.effects && (
+      {expandedSections.filters && (
         <div style={sectionBodyStyle}>
-          <div style={rowStyle}>
-            <span
-              style={{
-                display: "flex",
-                alignItems: "center",
-                color: "var(--vt-text-secondary)",
-                flexShrink: 0,
-              }}
-            >
-              <IconCornerRadius size={12} />
-            </span>
-            <div style={{ flex: 1 }}>
-              <NumericInput
-                value={borderRadius}
-                suffix="px"
-                min={0}
-                onChange={(v) => {
-                  setBorderRadius(v);
-                  apply("border-radius", v + "px");
-                }}
-              />
-            </div>
-          </div>
-          <NumericInput
-            label="Opacity"
-            value={opacity}
-            suffix="%"
-            min={0}
-            max={100}
-            onChange={(v) => {
-              setOpacity(v);
-              apply("opacity", String(v / 100));
-            }}
-          />
-          {/* Gap (non-flex/grid context) */}
-          {!isFlexOrGrid && (
-            <NumericInput
-              label="Gap"
-              value={gap}
-              suffix="px"
-              min={0}
-              onChange={(v) => {
-                setGap(v);
-                apply("gap", v + "px");
-              }}
-            />
-          )}
+          <span style={{ fontSize: "var(--vt-font-size-label)", color: "var(--vt-text-disabled)" }}>
+            No filters applied
+          </span>
         </div>
       )}
       <div style={dividerStyle} />
