@@ -651,3 +651,13 @@ export function IconDiff({ size, className }: IconProps) {
     </Svg>
   );
 }
+
+export function IconChat({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <path d="M2 3h12v8H5l-3 3V3z" fill="none" />
+      <line x1="4" y1="5.5" x2="10" y2="5.5" />
+      <line x1="4" y1="8" x2="8" y2="8" />
+    </Svg>
+  );
+}

@@ -24,11 +24,11 @@ import { TokenExtractor } from "./TokenExtractor.js";
 import { ColorPalette } from "./ColorPalette.js";
 import { GridFlexDebugger } from "./GridFlexDebugger.js";
 import { DiffReporter } from "./DiffReporter.js";
-import { IconInspect, IconClose, IconSend, IconDesign, IconLayers, IconBoxModel, IconResponsive, IconUndo, IconRedo, IconReset, IconCopy, IconPanelLeft, IconPanelRight, IconLayoutGrid, IconCode } from "./icons.js";
+import { IconInspect, IconClose, IconSend, IconDesign, IconLayers, IconBoxModel, IconResponsive, IconUndo, IconRedo, IconReset, IconCopy, IconPanelLeft, IconPanelRight, IconLayoutGrid, IconCode, IconChat } from "./icons.js";
 
 // ─── Types ────────────────────────────────────────────────────
 
-type PanelTab = "design" | "layers" | "inspect";
+type PanelTab = "design" | "layers" | "inspect" | "chat";
 type PanelSide = "left" | "right";
 
 interface ChatMessage {
@@ -67,7 +67,6 @@ function VizTweakInner() {
   const [wsConnected, setWsConnected] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
-  const [chatExpanded, setChatExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<PanelTab>("design");
   const [panelSide, setPanelSide] = useState<PanelSide>("right");
   const [pseudoState, setPseudoState] = useState<PseudoState>("default");
@@ -77,6 +76,7 @@ function VizTweakInner() {
   const [showSpacingOverlay, setShowSpacingOverlay] = useState(false);
   const [showResponsive, setShowResponsive] = useState(false);
   const [showLayoutDebugger, setShowLayoutDebugger] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLDivElement>(null);
@@ -109,7 +109,7 @@ function VizTweakInner() {
           timestamp: Date.now(),
         },
       ]);
-      setChatExpanded(true);
+      setUnreadCount((prev) => prev + 1);
     });
 
     return () => {
@@ -412,7 +412,7 @@ function VizTweakInner() {
           </div>
 
           {/* ─── Tab Switcher (Design / Layers / Inspect) ─── */}
-          <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} connected={wsConnected} />
+          <TabSwitcher activeTab={activeTab} onTabChange={(tab) => { setActiveTab(tab); if (tab === "chat") setUnreadCount(0); }} connected={wsConnected} unreadCount={unreadCount} />
 
           {/* ─── State Selector (Design tab only) ─── */}
           {activeTab === "design" && (
@@ -451,34 +451,66 @@ function VizTweakInner() {
               <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
               <CSSVarInspector element={selectedElement} />
             </div>
-          ) : (
-            <LayerTree
-              selectedElement={selectedElement}
-              onSelect={handleSelect}
-            />
-          )}
+          ) : activeTab === "chat" ? (
+            <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+              {/* Connection status bar */}
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "8px 12px",
+                borderBottom: "1px solid var(--vt-border)",
+                flexShrink: 0,
+              }}>
+                <span style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: wsConnected ? "#15B467" : "#C4C4C4",
+                  flexShrink: 0,
+                }} />
+                <span style={{
+                  fontSize: "11px",
+                  fontFamily: "var(--vt-font)",
+                  color: "var(--vt-text-secondary)",
+                }}>
+                  {wsConnected ? "Agent connected" : "Agent offline"}
+                </span>
+              </div>
 
-          {/* ─── Chat bar — fixed at bottom ─── */}
-          <div
-            style={{
-              borderTop: "1px solid var(--vt-border)",
-              background: "var(--vt-surface)",
-              flexShrink: 0,
-              borderRadius: "0 0 var(--vt-panel-radius) var(--vt-panel-radius)",
-            }}
-          >
-            {chatExpanded && messages.length > 0 && (
+              {/* Messages area */}
               <div
                 ref={chatScrollRef}
                 style={{
-                  maxHeight: "120px",
+                  flex: 1,
                   overflowY: "auto",
-                  padding: "6px 8px",
+                  padding: "8px 10px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "4px",
+                  gap: "6px",
                 }}
               >
+                {messages.length === 0 && (
+                  <div style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flex: 1,
+                    gap: "8px",
+                    padding: "24px 12px",
+                    textAlign: "center",
+                  }}>
+                    <IconChat size={24} />
+                    <span style={{
+                      fontSize: "11px",
+                      color: "var(--vt-text-disabled)",
+                      lineHeight: "16px",
+                    }}>
+                      Send messages to the AI agent.{"\n"}Changes you request here will be relayed to your coding assistant.
+                    </span>
+                  </div>
+                )}
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
@@ -491,12 +523,12 @@ function VizTweakInner() {
                     <div
                       style={{
                         maxWidth: "90%",
-                        padding: "4px 8px",
-                        borderRadius: "6px",
+                        padding: "6px 10px",
+                        borderRadius: msg.from === "designer" ? "10px 10px 2px 10px" : "10px 10px 10px 2px",
                         fontSize: "11px",
-                        lineHeight: "15px",
-                        background: msg.from === "designer" ? "var(--vt-accent-bg)" : "#F0F0F0",
-                        color: "var(--vt-text-primary)",
+                        lineHeight: "16px",
+                        background: msg.from === "designer" ? "var(--vt-accent)" : "var(--vt-hover)",
+                        color: msg.from === "designer" ? "#FFFFFF" : "var(--vt-text-primary)",
                         wordBreak: "break-word",
                       }}
                     >
@@ -506,7 +538,8 @@ function VizTweakInner() {
                       style={{
                         fontSize: "9px",
                         color: "var(--vt-text-disabled)",
-                        marginTop: "1px",
+                        marginTop: "2px",
+                        padding: msg.from === "designer" ? "0 2px 0 0" : "0 0 0 2px",
                       }}
                     >
                       {formatTime(msg.timestamp)}
@@ -514,66 +547,74 @@ function VizTweakInner() {
                   </div>
                 ))}
               </div>
-            )}
 
-            {/* Input row */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                padding: "6px 8px",
-              }}
-            >
-              <input
-                type="text"
-                placeholder="Tell the agent..."
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onFocus={() => setChatExpanded(true)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  height: "var(--vt-input-height)",
-                  fontSize: "var(--vt-font-size-value)",
-                  fontFamily: "var(--vt-font)",
-                  color: "var(--vt-text-primary)",
-                  background: "var(--vt-input-bg)",
-                  border: "1px solid var(--vt-input-border)",
-                  borderRadius: "var(--vt-input-radius)",
-                  outline: "none",
-                  padding: "0 6px",
-                  minWidth: 0,
-                }}
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={!chatInput.trim()}
+              {/* Input row — pinned at bottom */}
+              <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  width: "24px",
-                  height: "24px",
-                  border: "none",
-                  background: chatInput.trim() ? "var(--vt-accent)" : "var(--vt-hover)",
-                  color: chatInput.trim() ? "#FFFFFF" : "var(--vt-text-disabled)",
-                  borderRadius: "var(--vt-input-radius)",
-                  cursor: chatInput.trim() ? "pointer" : "default",
-                  padding: 0,
+                  gap: "4px",
+                  padding: "8px 10px",
+                  borderTop: "1px solid var(--vt-border)",
                   flexShrink: 0,
+                  background: "var(--vt-surface)",
+                  borderRadius: "0 0 var(--vt-panel-radius) var(--vt-panel-radius)",
                 }}
-                aria-label="Send message"
               >
-                <IconSend size={12} />
-              </button>
+                <input
+                  type="text"
+                  placeholder="Tell the agent..."
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    height: "var(--vt-input-height)",
+                    fontSize: "var(--vt-font-size-value)",
+                    fontFamily: "var(--vt-font)",
+                    color: "var(--vt-text-primary)",
+                    background: "var(--vt-input-bg)",
+                    border: "1px solid var(--vt-input-border)",
+                    borderRadius: "var(--vt-input-radius)",
+                    outline: "none",
+                    padding: "0 6px",
+                    minWidth: 0,
+                  }}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!chatInput.trim()}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "26px",
+                    height: "26px",
+                    border: "none",
+                    background: chatInput.trim() ? "var(--vt-accent)" : "var(--vt-hover)",
+                    color: chatInput.trim() ? "#FFFFFF" : "var(--vt-text-disabled)",
+                    borderRadius: "var(--vt-input-radius)",
+                    cursor: chatInput.trim() ? "pointer" : "default",
+                    padding: 0,
+                    flexShrink: 0,
+                  }}
+                  aria-label="Send message"
+                >
+                  <IconSend size={12} />
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <LayerTree
+              selectedElement={selectedElement}
+              onSelect={handleSelect}
+            />
+          )}
         </div>
       )}
 
@@ -733,15 +774,18 @@ function TabSwitcher({
   activeTab,
   onTabChange,
   connected,
+  unreadCount,
 }: {
   activeTab: PanelTab;
   onTabChange: (tab: PanelTab) => void;
   connected: boolean;
+  unreadCount: number;
 }) {
   const tabs: { id: PanelTab; label: string; icon: React.ReactNode }[] = [
     { id: "design", label: "Design", icon: <IconDesign size={12} /> },
     { id: "layers", label: "Layers", icon: <IconLayers size={12} /> },
     { id: "inspect", label: "Inspect", icon: <IconCode size={12} /> },
+    { id: "chat", label: "Chat", icon: <IconChat size={12} /> },
   ];
   const [hovered, setHovered] = useState<PanelTab | null>(null);
 
@@ -761,6 +805,7 @@ function TabSwitcher({
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         const isHov = hovered === tab.id;
+        const showBadge = tab.id === "chat" && unreadCount > 0 && !isActive;
         return (
           <button
             key={tab.id}
@@ -789,25 +834,38 @@ function TabSwitcher({
                 : "var(--vt-text-secondary)",
               transition: "all 100ms ease",
               whiteSpace: "nowrap",
+              position: "relative",
             }}
           >
             {tab.icon}
             {tab.label}
+            {showBadge && (
+              <span style={{
+                position: "absolute",
+                top: "2px",
+                right: "2px",
+                width: "7px",
+                height: "7px",
+                borderRadius: "50%",
+                background: "var(--vt-accent)",
+              }} />
+            )}
           </button>
         );
       })}
 
-      {/* Connection status as tiny text on right */}
+      {/* Connection status as tiny dot on right */}
       <div style={{ flex: 1 }} />
       <span
         style={{
-          fontSize: "9px",
-          color: "var(--vt-text-disabled)",
-          whiteSpace: "nowrap",
+          width: "6px",
+          height: "6px",
+          borderRadius: "50%",
+          background: connected ? "#15B467" : "#C4C4C4",
+          flexShrink: 0,
         }}
-      >
-        {connected ? "● Agent" : "○ Offline"}
-      </span>
+        title={connected ? "Agent connected" : "Agent offline"}
+      />
     </div>
   );
 }
