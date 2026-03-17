@@ -218,70 +218,20 @@ export default function App() {
     localStorage.setItem("viztweak-theme", theme);
   }, [theme]);
 
-  // Persistent port connection to background
+  // Port for sending commands to content script via background
   const portRef = useRef<chrome.runtime.Port | null>(null);
 
+  // Connect port for sending commands
   useEffect(() => {
-    // Connect to background via long-lived port
     const port = chrome.runtime.connect({ name: "viztweak-panel" });
     portRef.current = port;
-    console.log("[VizTweak Panel] Connected to background via port");
-
-    // Listen for push messages from content script (via background)
-    port.onMessage.addListener((msg: any) => {
-      console.log("[VizTweak Panel] Port message:", msg.type);
-
-      if (msg.type === "ELEMENT_SELECTED" && msg.payload) {
-        console.log("[VizTweak Panel] Got element:", msg.payload.element?.tagName);
-        setSelected(msg.payload as SelectedElementData);
-        setStyles(msg.payload.computedStyles || {});
-        setInspecting(false);
-      }
-
-      if (msg.type === "PONG" && msg.payload) {
-        setConnected(true);
-        if (msg.payload.active) setInspecting(true);
-      }
-
-      // Handle responses to commands we sent
-      if (msg.type === "PING_RESPONSE" && msg.payload) {
-        setConnected(true);
-        if (!msg.payload.payload?.hasSelection) {
-          port.postMessage({ type: "ACTIVATE" });
-          setInspecting(true);
-        }
-      }
-
-      if (msg.type === "APPLY_STYLE_RESPONSE" && msg.payload?.computedStyles) {
-        setStyles(msg.payload.computedStyles);
-      }
-      if (msg.type === "UNDO_RESPONSE" && msg.payload?.computedStyles) {
-        setStyles(msg.payload.computedStyles);
-      }
-      if (msg.type === "REDO_RESPONSE" && msg.payload?.computedStyles) {
-        setStyles(msg.payload.computedStyles);
-      }
-      if (msg.type === "GET_DOM_TREE_RESPONSE" && msg.payload?.tree) {
-        setDomTree(msg.payload.tree);
-      }
-      if (msg.type === "RUN_ACCESSIBILITY_RESPONSE" && msg.payload?.issues) {
-        setA11yIssues(msg.payload.issues);
-      }
-      if (msg.type === "COPY_CHANGES_RESPONSE" && msg.payload?.text) {
-        navigator.clipboard.writeText(msg.payload.text).then(() => {
-          setCopyFeedback(true);
-          setTimeout(() => setCopyFeedback(false), 2000);
-        });
-      }
-    });
 
     port.onDisconnect.addListener(() => {
-      console.log("[VizTweak Panel] Port disconnected");
       portRef.current = null;
       setConnected(false);
     });
 
-    // Ping content script on connect
+    // Ping to check if content script is alive
     port.postMessage({ type: "PING" });
 
     return () => {
@@ -290,7 +240,66 @@ export default function App() {
     };
   }, []);
 
-  // Helper: send message to content script via port
+  // Listen for data from content script via chrome.storage.session
+  useEffect(() => {
+    const handler = (changes: { [key: string]: chrome.storage.StorageChange }, area: string) => {
+      if (area !== "session") return;
+
+      if (changes.viztweak_selected?.newValue) {
+        const data = changes.viztweak_selected.newValue as SelectedElementData;
+        setSelected(data);
+        setStyles(data.computedStyles || {});
+        setInspecting(false);
+        setConnected(true);
+      }
+      if (changes.viztweak_styles?.newValue) {
+        setStyles(changes.viztweak_styles.newValue);
+      }
+      if (changes.viztweak_domtree?.newValue) {
+        setDomTree(changes.viztweak_domtree.newValue);
+      }
+      if (changes.viztweak_a11y?.newValue) {
+        setA11yIssues(changes.viztweak_a11y.newValue);
+      }
+      if (changes.viztweak_copytext?.newValue) {
+        const text = changes.viztweak_copytext.newValue;
+        if (text) {
+          navigator.clipboard.writeText(text).then(() => {
+            setCopyFeedback(true);
+            setTimeout(() => setCopyFeedback(false), 2000);
+          });
+        }
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handler);
+
+    // Also check if there's already a PONG-like response (content script is alive)
+    // by checking the storage for recent data
+    chrome.storage.session.get("viztweak_ts").then((result) => {
+      if (result.viztweak_ts) setConnected(true);
+    }).catch(() => {});
+
+    // Also listen for port responses (for PING)
+    const portListener = (msg: any) => {
+      if (msg.type === "PING_RESPONSE" && msg.payload) {
+        setConnected(true);
+        if (!msg.payload.payload?.hasSelection) {
+          portRef.current?.postMessage({ type: "ACTIVATE" });
+          setInspecting(true);
+        }
+      }
+    };
+    if (portRef.current) {
+      portRef.current.onMessage.addListener(portListener);
+    }
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handler);
+    };
+  }, []);
+
+  // Helper: send command to content script via port
   const send = useCallback((msg: Message) => {
     if (portRef.current) {
       portRef.current.postMessage(msg);

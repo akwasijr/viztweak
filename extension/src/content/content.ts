@@ -492,12 +492,13 @@ function onMouseClick(e: MouseEvent) {
   captureBaseline(el);
 
   const data = resolveElement(el);
-  console.log("[VizTweak] Element selected:", el.tagName, "sending to background");
-  chrome.runtime.sendMessage({ type: "ELEMENT_SELECTED", payload: data }).then(() => {
-    console.log("[VizTweak] ELEMENT_SELECTED sent successfully");
-  }).catch((err: any) => {
-    console.error("[VizTweak] Failed to send ELEMENT_SELECTED:", err);
-  });
+  // Write to storage so side panel can pick it up directly (no relay needed)
+  chrome.storage.session.set({
+    viztweak_selected: data,
+    viztweak_ts: Date.now(),
+  }).catch(() => {});
+  // Also try runtime message as fallback
+  chrome.runtime.sendMessage({ type: "ELEMENT_SELECTED", payload: data }).catch(() => {});
 }
 
 function activate() {
@@ -538,20 +539,29 @@ chrome.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
     case "APPLY_STYLE":
       if (selectedEl && msg.payload) {
         applyStyle(selectedEl, msg.payload.property, msg.payload.value);
-        // Send back updated computed styles
-        sendResponse({ computedStyles: getComputedStyles(selectedEl) });
+        const updated = getComputedStyles(selectedEl);
+        sendResponse({ computedStyles: updated });
+        chrome.storage.session.set({ viztweak_styles: updated, viztweak_ts: Date.now() }).catch(() => {});
       }
       break;
 
     case "UNDO":
       undo();
-      if (selectedEl) sendResponse({ computedStyles: getComputedStyles(selectedEl) });
+      if (selectedEl) {
+        const updated = getComputedStyles(selectedEl);
+        sendResponse({ computedStyles: updated });
+        chrome.storage.session.set({ viztweak_styles: updated, viztweak_ts: Date.now() }).catch(() => {});
+      }
       else sendResponse({ ok: true });
       break;
 
     case "REDO":
       redo();
-      if (selectedEl) sendResponse({ computedStyles: getComputedStyles(selectedEl) });
+      if (selectedEl) {
+        const updated = getComputedStyles(selectedEl);
+        sendResponse({ computedStyles: updated });
+        chrome.storage.session.set({ viztweak_styles: updated, viztweak_ts: Date.now() }).catch(() => {});
+      }
       else sendResponse({ ok: true });
       break;
 
@@ -563,12 +573,14 @@ chrome.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
     case "COPY_CHANGES": {
       const text = formatChanges();
       sendResponse({ text });
+      chrome.storage.session.set({ viztweak_copytext: text, viztweak_ts: Date.now() }).catch(() => {});
       break;
     }
 
     case "GET_DOM_TREE": {
       const tree = buildDomTree(document.body);
       sendResponse({ tree });
+      chrome.storage.session.set({ viztweak_domtree: tree, viztweak_ts: Date.now() }).catch(() => {});
       break;
     }
 
@@ -589,6 +601,7 @@ chrome.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
     case "RUN_ACCESSIBILITY": {
       const results = runAccessibilityCheck(msg.payload?.elementOnly ? selectedEl || undefined : undefined);
       sendResponse({ issues: results });
+      chrome.storage.session.set({ viztweak_a11y: results, viztweak_ts: Date.now() }).catch(() => {});
       break;
     }
 
