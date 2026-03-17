@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
+import { createPortal } from "react-dom";
 import { Inspector } from "./Inspector.js";
 import { StylePanel } from "./StylePanel.js";
 import { LayerTree } from "./LayerTree.js";
@@ -84,8 +85,26 @@ function VizTweakInner() {
   const panelRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement | null>(null);
   const diffEngine = useMemo(() => new DiffEngine(), []);
   const wsClient = useMemo(() => new WSClient(), []);
+
+  // Create a portal container directly on document.body so VizTweak
+  // elements are never affected by position/transform changes on app elements
+  useEffect(() => {
+    let container = document.getElementById("viztweak-portal") as HTMLDivElement | null;
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "viztweak-portal";
+      container.setAttribute("data-viztweak", "");
+      container.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;overflow:visible;z-index:2147483640;pointer-events:none;";
+      document.body.appendChild(container);
+    }
+    portalRef.current = container;
+    return () => {
+      // Don't remove on unmount — may remount in dev mode
+    };
+  }, []);
 
   // Inject theme on mount
   useEffect(() => {
@@ -156,6 +175,23 @@ function VizTweakInner() {
       chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Apply color vision simulation filter to <html> element
+  useEffect(() => {
+    const html = document.documentElement;
+    if (!colorBlindMode) {
+      html.style.removeProperty("filter");
+      return;
+    }
+    const filterMap: Record<string, string> = {
+      deuteranopia: "url(#vt-deuteranopia)",
+      protanopia: "url(#vt-protanopia)",
+      tritanopia: "url(#vt-tritanopia)",
+      monochromacy: "saturate(0)",
+    };
+    html.style.setProperty("filter", filterMap[colorBlindMode] || "");
+    return () => { html.style.removeProperty("filter"); };
+  }, [colorBlindMode]);
 
   // Handle element selection (from inspector or layer tree)
   const handleSelect = useCallback(
@@ -346,8 +382,10 @@ function VizTweakInner() {
     overflow: "hidden",
   };
 
-  return (
-    <>
+  if (!portalRef.current) return null;
+
+  return createPortal(
+    <div style={{ pointerEvents: "auto" }}>
       {/* Inspector overlay */}
       <Inspector
         active={inspecting}
@@ -524,6 +562,82 @@ function VizTweakInner() {
             </div>
           ) : activeTab === "inspect" ? (
             <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflowY: "auto" }}>
+              {/* ─── Overlays section ─── */}
+              <div style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--vt-text-primary)" }}>Overlays</span>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <button
+                    onClick={() => setShowSpacingOverlay((p) => !p)}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "5px 8px",
+                      fontSize: "11px",
+                      fontFamily: "var(--vt-font)",
+                      color: showSpacingOverlay ? "var(--vt-accent)" : "var(--vt-text-secondary)",
+                      background: showSpacingOverlay ? "var(--vt-accent-bg)" : "var(--vt-input-bg)",
+                      border: "1px solid " + (showSpacingOverlay ? "var(--vt-accent)" : "var(--vt-input-border)"),
+                      borderRadius: "var(--vt-input-radius)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <IconSpacingOverlay size={13} /> Spacing
+                  </button>
+                  <button
+                    onClick={() => setShowLayoutDebugger((p) => !p)}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "5px 8px",
+                      fontSize: "11px",
+                      fontFamily: "var(--vt-font)",
+                      color: showLayoutDebugger ? "var(--vt-accent)" : "var(--vt-text-secondary)",
+                      background: showLayoutDebugger ? "var(--vt-accent-bg)" : "var(--vt-input-bg)",
+                      border: "1px solid " + (showLayoutDebugger ? "var(--vt-accent)" : "var(--vt-input-border)"),
+                      borderRadius: "var(--vt-input-radius)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <IconGridOverlay size={13} /> Grid
+                  </button>
+                </div>
+              </div>
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+
+              {/* ─── Vision Simulation section ─── */}
+              <div style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--vt-text-primary)" }}>Vision Simulation</span>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                  {COLOR_VISION_MODES.map((mode) => {
+                    const isActive = colorBlindMode === mode.id;
+                    return (
+                      <button
+                        key={mode.id ?? "normal"}
+                        onClick={() => setColorBlindMode(mode.id)}
+                        style={{
+                          fontSize: "10px",
+                          fontFamily: "var(--vt-font)",
+                          padding: "4px 8px",
+                          borderRadius: "var(--vt-input-radius)",
+                          border: "1px solid " + (isActive ? "var(--vt-accent)" : "var(--vt-input-border)"),
+                          cursor: "pointer",
+                          background: isActive ? "var(--vt-accent-bg)" : "var(--vt-input-bg)",
+                          color: isActive ? "var(--vt-accent)" : "var(--vt-text-secondary)",
+                          fontWeight: isActive ? 600 : 400,
+                        }}
+                      >
+                        {mode.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+
               <ClassEditor element={selectedElement} />
               <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
               <TokenExtractor element={selectedElement} />
@@ -765,43 +879,21 @@ function VizTweakInner() {
         </div>
       )}
 
-      {/* ─── Color Blind Simulation Overlay ─── */}
-      {colorBlindMode && (
-        <div
-          data-viztweak=""
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 2147483640,
-            pointerEvents: "none",
-            filter: colorBlindMode === "deuteranopia"
-              ? "url(#vt-deuteranopia)"
-              : colorBlindMode === "protanopia"
-                ? "url(#vt-protanopia)"
-                : colorBlindMode === "tritanopia"
-                  ? "url(#vt-tritanopia)"
-                  : "saturate(0)",
-            mixBlendMode: "color",
-          }}
-        />
-      )}
-      {colorBlindMode && (
-        <svg data-viztweak="" style={{ position: "absolute", width: 0, height: 0 }}>
-          <defs>
-            <filter id="vt-deuteranopia">
-              <feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0" />
-            </filter>
-            <filter id="vt-protanopia">
-              <feColorMatrix type="matrix" values="0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0" />
-            </filter>
-            <filter id="vt-tritanopia">
-              <feColorMatrix type="matrix" values="0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0" />
-            </filter>
-          </defs>
-        </svg>
-      )}
+      {/* ─── Color Blind Simulation SVG Filters (always in DOM) ─── */}
+      <svg data-viztweak="" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
+        <defs>
+          <filter id="vt-deuteranopia">
+            <feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0" />
+          </filter>
+          <filter id="vt-protanopia">
+            <feColorMatrix type="matrix" values="0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0" />
+          </filter>
+          <filter id="vt-tritanopia">
+            <feColorMatrix type="matrix" values="0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0" />
+          </filter>
+        </defs>
+      </svg>
 
-      {/* ─── Keyboard Shortcuts Help ─── */}
       {/* ─── Floating pill toolbar ─── */}
       {(() => {
         const expanded = inspecting || selectedElement !== null;
@@ -877,8 +969,6 @@ function VizTweakInner() {
 
                 <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
 
-                <PillBtn icon={<IconSpacingOverlay size={15} />} tooltip="Spacing overlay" onClick={() => setShowSpacingOverlay((p) => !p)} active={showSpacingOverlay} />
-                <PillBtn icon={<IconGridOverlay size={15} />} tooltip="Grid debugger" onClick={() => setShowLayoutDebugger((p) => !p)} active={showLayoutDebugger} />
                 <PillBtn icon={<IconResponsive size={15} />} tooltip="Responsive preview" onClick={() => setShowResponsive((p) => !p)} active={showResponsive} />
 
                 <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
@@ -893,17 +983,13 @@ function VizTweakInner() {
                   tooltip={themeMode === "dark" ? "Light mode" : "Dark mode"}
                   onClick={handleToggleTheme}
                 />
-                <ColorVisionDropdown
-                  active={colorBlindMode}
-                  onChange={setColorBlindMode}
-                  themeMode={themeMode}
-                />
               </>
             )}
           </div>
         );
       })()}
-    </>
+    </div>,
+    portalRef.current,
   );
 }
 
@@ -960,7 +1046,7 @@ function PillBtn({
   );
 }
 
-// ─── Color Vision Simulation Dropdown ──────────────────────────
+// ─── Color Vision Modes ───────────────────────────────────────
 
 const COLOR_VISION_MODES = [
   { id: null, label: "Normal" },
@@ -969,85 +1055,6 @@ const COLOR_VISION_MODES = [
   { id: "tritanopia", label: "Tritanopia" },
   { id: "monochromacy", label: "Monochromacy" },
 ] as const;
-
-function ColorVisionDropdown({
-  active,
-  onChange,
-  themeMode,
-}: {
-  active: string | null;
-  onChange: (mode: string | null) => void;
-  themeMode: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
-  return (
-    <div ref={ref} style={{ position: "relative" }}>
-      <PillBtn
-        icon={<IconAccessibility size={14} />}
-        tooltip="Color vision simulation"
-        onClick={() => setOpen((p) => !p)}
-        active={active !== null}
-      />
-      {open && (
-        <div
-          data-viztweak=""
-          {...{ [THEME_MODE_ATTR]: themeMode }}
-          style={{
-            position: "absolute",
-            bottom: "38px",
-            right: 0,
-            background: "var(--vt-panel-bg)",
-            border: "1px solid var(--vt-border)",
-            borderRadius: "8px",
-            padding: "4px",
-            boxShadow: "var(--vt-shadow-md)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "2px",
-            minWidth: "140px",
-            fontFamily: "var(--vt-font)",
-            zIndex: 10,
-          }}
-        >
-          {COLOR_VISION_MODES.map((mode) => {
-            const isActive = active === mode.id;
-            return (
-              <button
-                key={mode.id ?? "normal"}
-                onClick={() => { onChange(mode.id); setOpen(false); }}
-                style={{
-                  fontSize: "11px",
-                  fontFamily: "var(--vt-font)",
-                  padding: "5px 8px",
-                  borderRadius: "var(--vt-input-radius)",
-                  border: "none",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  background: isActive ? "var(--vt-accent-bg)" : "transparent",
-                  color: isActive ? "var(--vt-accent)" : "var(--vt-text-primary)",
-                  fontWeight: isActive ? 600 : 400,
-                }}
-              >
-                {mode.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ─── Tab Switcher ─────────────────────────────────────────────
 

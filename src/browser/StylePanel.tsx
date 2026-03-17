@@ -241,6 +241,18 @@ export function StylePanel({
       if (diff) {
         wsClient.send({ type: "changes_updated", payload: { diffs: [diff] } });
       }
+      // Re-assert VizTweak fixed positioning after changes to layout-affecting
+      // properties on ancestor elements (body, html, root containers)
+      const layoutProps = ["position", "display", "overflow", "transform", "filter", "perspective", "will-change", "contain"];
+      if (layoutProps.includes(cssProp)) {
+        requestAnimationFrame(() => {
+          document.querySelectorAll<HTMLElement>("[data-viztweak]").forEach((el) => {
+            if (el.style.position === "fixed") {
+              el.style.position = "fixed";
+            }
+          });
+        });
+      }
     },
     [element, diffEngine, wsClient],
   );
