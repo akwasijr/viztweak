@@ -2,7 +2,7 @@
 
 **Tweak any UI in the browser. Copy the changes to your AI coding agent.**
 
-A visual inspector that lives inside your React app. Select elements, adjust styles live, then paste the changes into Copilot, Cursor, or Claude Code — it writes the code.
+A visual inspector that lives inside your React app. Select elements, adjust styles live, then paste the changes into Copilot, Cursor, or Claude Code. It writes the code for you.
 
 ![version](https://img.shields.io/badge/version-0.9.5-blue) ![license](https://img.shields.io/badge/license-MIT-green)
 
@@ -16,7 +16,7 @@ A visual inspector that lives inside your React app. Select elements, adjust sty
 npm install viztweak
 ```
 
-Then drop it into your layout — one line:
+Then drop it into your layout, one line:
 
 ```tsx
 import { VizTweak } from "viztweak";
@@ -28,7 +28,7 @@ import { VizTweak } from "viztweak";
 <details>
 <summary>Full examples for Next.js, Vite, CRA</summary>
 
-**Next.js (App Router)** — `app/layout.tsx`
+**Next.js (App Router)** `app/layout.tsx`
 ```tsx
 import { VizTweak } from "viztweak";
 
@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-**Next.js (Pages Router)** — `pages/_app.tsx`
+**Next.js (Pages Router)** `pages/_app.tsx`
 ```tsx
 import { VizTweak } from "viztweak";
 
@@ -58,7 +58,7 @@ export default function App({ Component, pageProps }) {
 }
 ```
 
-**Vite / CRA** — `src/App.tsx`
+**Vite / CRA** `src/App.tsx`
 ```tsx
 import { VizTweak } from "viztweak";
 
@@ -101,11 +101,11 @@ This lets your agent pull changes directly instead of copy/paste. Add to your pr
 
 ## How to use it
 
-1. Open your app in the browser — you'll see a small pill in the bottom-right
+1. Open your app in the browser. You'll see a small pill in the bottom-right
 2. Click the **crosshair** icon, then click any element on your page
 3. Adjust styles in the panel (spacing, colors, fonts, sizes, shadows, etc.)
-4. Click **Copy** — VizTweak generates plain-English instructions
-5. Paste into your AI agent's chat — it makes the code changes
+4. Click **Copy**. VizTweak generates plain-English instructions
+5. Paste into your AI agent's chat. It makes the code changes
 
 That's it. No build step, no config files, no accounts.
 
@@ -118,7 +118,7 @@ That's it. No build step, no config files, no accounts.
 | **Position** | position type, top, left, z-index, rotation |
 | **Layout** | display, flex direction, justify, align, gap, wrap |
 | **Spacing** | padding (all sides), margin (all sides, including negative) |
-| **Size** | width, height — type any value with units (px, %, vh, vw, em, rem, auto) |
+| **Size** | width, height with units (px, %, vh, vw, em, rem, auto) |
 | **Typography** | font family (Google Fonts picker), weight, size, line-height, letter-spacing, text-align, text-decoration, color |
 | **Appearance** | opacity, overflow, border-radius (all corners) |
 | **Fill** | background color with opacity + visibility toggle |
@@ -128,13 +128,13 @@ That's it. No build step, no config files, no accounts.
 
 ## Other tools
 
-- **Undo / Redo / Reset** — full undo stack, reset all changes at once
-- **Dark / Light mode** — toggle the plugin theme
-- **Responsive preview** — test at mobile, tablet, desktop widths
-- **Spacing overlay** — visualize padding and margins
-- **Grid debugger** — overlay grid lines for alignment
-- **Accessibility checker** — 15 element-level checks + full page audit
-- **Color vision simulation** — preview for deuteranopia, protanopia, tritanopia, achromatopsia
+- **Undo / Redo / Reset** full undo stack, reset all changes at once
+- **Dark / Light mode** toggle the plugin theme
+- **Responsive preview** test at mobile, tablet, desktop widths
+- **Spacing overlay** visualize padding and margins
+- **Grid debugger** overlay grid lines for alignment
+- **Accessibility checker** 15 element-level checks + full page audit
+- **Color vision simulation** preview for deuteranopia, protanopia, tritanopia, achromatopsia
 
 ---
 
@@ -214,10 +214,10 @@ This feature requires the MCP server to be running. It's experimental and may ch
 
 ## Privacy
 
-- **No telemetry** — nothing leaves your machine
-- **No accounts** — no sign-up, no API keys
-- **No persistence** — all changes are in-memory only
-- **Local only** — WebSocket runs on `localhost:7890`
+- **No telemetry.** Nothing leaves your machine
+- **No accounts.** No sign-up, no API keys
+- **No persistence.** All changes are in-memory only
+- **Runs locally.** Everything stays on your dev server
 
 ---
 

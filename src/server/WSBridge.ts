@@ -11,7 +11,7 @@ import { ChangeStore } from "./ChangeStore.js";
 
 /**
  * WebSocket bridge that connects the browser component to the MCP server.
- * Runs a WS server on localhost:7890 and relays element selections,
+ * Relays element selections, style changes, and designer messages.
  * changes, and designer messages.
  */
 export class WSBridge {
