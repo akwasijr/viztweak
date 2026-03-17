@@ -486,27 +486,134 @@ function VizTweakInner() {
                   gap: "6px",
                 }}
               >
-                {messages.length === 0 && (
-                  <div style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flex: 1,
-                    gap: "8px",
-                    padding: "24px 12px",
-                    textAlign: "center",
-                  }}>
-                    <IconChat size={24} />
-                    <span style={{
-                      fontSize: "11px",
-                      color: "var(--vt-text-disabled)",
-                      lineHeight: "16px",
+                {messages.length === 0 && (() => {
+                  const elTag = selectedElement ? selectedElement.tagName.toLowerCase() : null;
+                  const elId = selectedElement?.id ? `#${selectedElement.id}` : "";
+                  const elClass = selectedElement?.className
+                    ? `.${String(selectedElement.className).split(" ").filter(Boolean)[0]}`
+                    : "";
+                  const elLabel = elTag ? `<${elTag}${elId || elClass}>` : "element";
+
+                  type PromptGroup = { label: string; prompts: { icon: string; text: string }[] };
+                  const groups: PromptGroup[] = [
+                    {
+                      label: "Style & Layout",
+                      prompts: [
+                        { icon: "🎨", text: `Change the color scheme of this ${elLabel}` },
+                        { icon: "📐", text: `Fix the spacing and alignment of ${elLabel}` },
+                        { icon: "📱", text: "Make this section responsive for mobile" },
+                      ],
+                    },
+                    {
+                      label: "Accessibility",
+                      prompts: [
+                        { icon: "♿", text: `Check and fix accessibility issues on ${elLabel}` },
+                        { icon: "🔤", text: `Improve text contrast and readability here` },
+                      ],
+                    },
+                    {
+                      label: "Component",
+                      prompts: [
+                        { icon: "🔄", text: `Refactor ${elLabel} into a reusable component` },
+                        { icon: "✨", text: `Add hover and focus states to ${elLabel}` },
+                        { icon: "🗑️", text: `Remove this ${elLabel} and clean up the layout` },
+                      ],
+                    },
+                    {
+                      label: "General",
+                      prompts: [
+                        { icon: "🐛", text: "Find and fix visual bugs on this page" },
+                        { icon: "⚡", text: "Optimize the CSS for this component" },
+                        { icon: "🌗", text: "Add dark mode support to this section" },
+                      ],
+                    },
+                  ];
+
+                  const handlePromptClick = (text: string) => {
+                    const msg: ChatMessage = {
+                      id: "designer-" + Date.now(),
+                      text,
+                      from: "designer",
+                      timestamp: Date.now(),
+                    };
+                    setMessages((prev) => [...prev, msg]);
+                    wsClient.send({
+                      type: "designer_message",
+                      payload: { id: msg.id, text: msg.text, timestamp: msg.timestamp },
+                    });
+                  };
+
+                  return (
+                    <div style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      flex: 1,
+                      gap: "12px",
+                      padding: "12px 4px",
                     }}>
-                      Send messages to the AI agent.{"\n"}Changes you request here will be relayed to your coding assistant.
-                    </span>
-                  </div>
-                )}
+                      <div style={{ textAlign: "center", padding: "0 8px" }}>
+                        <IconChat size={20} />
+                        <p style={{
+                          fontSize: "11px",
+                          color: "var(--vt-text-disabled)",
+                          lineHeight: "15px",
+                          marginTop: "4px",
+                        }}>
+                          Tell the AI agent what to change.{selectedElement
+                            ? <> Selected: <strong style={{ color: "var(--vt-text-secondary)" }}>{elLabel}</strong></>
+                            : " Select an element first for context-aware prompts."}
+                        </p>
+                      </div>
+                      {groups.map((group) => (
+                        <div key={group.label} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <span style={{
+                            fontSize: "9px",
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.5px",
+                            color: "var(--vt-text-disabled)",
+                            padding: "0 6px",
+                          }}>
+                            {group.label}
+                          </span>
+                          {group.prompts.map((p) => (
+                            <button
+                              key={p.text}
+                              onClick={() => handlePromptClick(p.text)}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                padding: "6px 8px",
+                                fontSize: "11px",
+                                lineHeight: "14px",
+                                color: "var(--vt-text-secondary)",
+                                background: "var(--vt-hover)",
+                                border: "1px solid var(--vt-border)",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                textAlign: "left",
+                                transition: "background 0.15s ease, border-color 0.15s ease",
+                                width: "100%",
+                              }}
+                              onMouseEnter={(e) => {
+                                (e.currentTarget as HTMLElement).style.background = "var(--vt-surface)";
+                                (e.currentTarget as HTMLElement).style.borderColor = "var(--vt-accent)";
+                              }}
+                              onMouseLeave={(e) => {
+                                (e.currentTarget as HTMLElement).style.background = "var(--vt-hover)";
+                                (e.currentTarget as HTMLElement).style.borderColor = "var(--vt-border)";
+                              }}
+                            >
+                              <span style={{ fontSize: "13px", flexShrink: 0 }}>{p.icon}</span>
+                              <span>{p.text}</span>
+                            </button>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
