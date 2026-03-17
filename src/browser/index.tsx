@@ -497,34 +497,50 @@ function VizTweakInner() {
                   type PromptGroup = { label: string; prompts: { icon: string; text: string }[] };
                   const groups: PromptGroup[] = [
                     {
-                      label: "Style & Layout",
+                      label: "UI Design",
                       prompts: [
                         { icon: "🎨", text: `Change the color scheme of this ${elLabel}` },
+                        { icon: "📏", text: `Increase the whitespace and breathing room around ${elLabel}` },
+                        { icon: "🔠", text: `Improve the typography hierarchy in this section` },
+                        { icon: "🖼️", text: `Add a subtle border and shadow to ${elLabel} to create depth` },
+                        { icon: "↔️", text: `Make ${elLabel} the same width/height as its siblings` },
+                      ],
+                    },
+                    {
+                      label: "Layout & Responsive",
+                      prompts: [
                         { icon: "📐", text: `Fix the spacing and alignment of ${elLabel}` },
                         { icon: "📱", text: "Make this section responsive for mobile" },
+                        { icon: "🏗️", text: `Convert ${elLabel} to use CSS Grid or Flexbox` },
+                        { icon: "📊", text: "Align all cards in this row to equal heights" },
+                      ],
+                    },
+                    {
+                      label: "Visual Polish",
+                      prompts: [
+                        { icon: "✨", text: `Add hover and focus states to ${elLabel}` },
+                        { icon: "🌀", text: `Add a smooth transition/animation to ${elLabel}` },
+                        { icon: "📎", text: `Round the corners and soften the edges of ${elLabel}` },
+                        { icon: "🌗", text: "Add dark mode support to this section" },
+                        { icon: "🪄", text: `Make ${elLabel} look more modern and polished` },
                       ],
                     },
                     {
                       label: "Accessibility",
                       prompts: [
                         { icon: "♿", text: `Check and fix accessibility issues on ${elLabel}` },
-                        { icon: "🔤", text: `Improve text contrast and readability here` },
+                        { icon: "🔤", text: "Improve text contrast and readability here" },
+                        { icon: "⌨️", text: `Add proper keyboard navigation to ${elLabel}` },
+                        { icon: "🏷️", text: `Add missing ARIA labels and roles to ${elLabel}` },
                       ],
                     },
                     {
-                      label: "Component",
+                      label: "Code & Structure",
                       prompts: [
                         { icon: "🔄", text: `Refactor ${elLabel} into a reusable component` },
-                        { icon: "✨", text: `Add hover and focus states to ${elLabel}` },
                         { icon: "🗑️", text: `Remove this ${elLabel} and clean up the layout` },
-                      ],
-                    },
-                    {
-                      label: "General",
-                      prompts: [
-                        { icon: "🐛", text: "Find and fix visual bugs on this page" },
                         { icon: "⚡", text: "Optimize the CSS for this component" },
-                        { icon: "🌗", text: "Add dark mode support to this section" },
+                        { icon: "🐛", text: "Find and fix visual bugs on this page" },
                       ],
                     },
                   ];
