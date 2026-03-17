@@ -205,6 +205,10 @@ function VizTweakInner() {
     [diffEngine],
   );
 
+  const handleSelectPage = useCallback(() => {
+    handleSelect(document.body);
+  }, [handleSelect]);
+
   const handleClose = useCallback(() => {
     setSelectedElement(null);
     setElementInfo(null);
@@ -960,6 +964,8 @@ function VizTweakInner() {
             {/* ─── Expanded toolbar buttons ─── */}
             {expanded && (
               <>
+                <PillBtn icon={<IconFrame size={15} />} tooltip="Select page" onClick={handleSelectPage} active={selectedElement === document.body} />
+
                 <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
 
                 <PillBtn icon={<IconCopy size={15} />} tooltip="Copy styles" onClick={handleCopyStyles} disabled={!selectedElement} />

@@ -109,6 +109,12 @@ const dividerStyle: React.CSSProperties = {
   margin: "2px 0",
 };
 
+const disabledSectionStyle: React.CSSProperties = {
+  opacity: 0.35,
+  pointerEvents: "none",
+  userSelect: "none",
+};
+
 // ─── Weight options for Select ────────────────────────────────
 
 const POPULAR_FONTS = [
@@ -154,6 +160,10 @@ export function StylePanel({
 }: StylePanelProps) {
   // Read computed styles as initial values
   const cs = window.getComputedStyle(element);
+
+  // Detect page-level selection (body/html) — some sections are N/A
+  const tag = element.tagName.toLowerCase();
+  const isPageLevel = tag === "body" || tag === "html";
 
   // Section collapse state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -363,6 +373,7 @@ export function StylePanel({
       }}
     >
       {/* ── 1. Position section ── */}
+      <div style={isPageLevel ? disabledSectionStyle : undefined}>
       <SectionHeader
         title="Position"
         expanded={expandedSections.position}
@@ -443,6 +454,7 @@ export function StylePanel({
           />
         </div>
       )}
+      </div>
       <div style={dividerStyle} />
 
       {/* ── 2. Layout section (always shown) ── */}
@@ -662,6 +674,7 @@ export function StylePanel({
       <div style={dividerStyle} />
 
       {/* ── 4. Margin section ── */}
+      <div style={isPageLevel ? disabledSectionStyle : undefined}>
       <SectionHeader
         title="Margin"
         expanded={expandedSections.margin}
@@ -740,9 +753,11 @@ export function StylePanel({
           )}
         </div>
       )}
+      </div>
       <div style={dividerStyle} />
 
       {/* ── 5. Size section ── */}
+      <div style={isPageLevel ? disabledSectionStyle : undefined}>
       <SectionHeader
         title="Size"
         expanded={expandedSections.size}
@@ -805,6 +820,7 @@ export function StylePanel({
           </div>
         </div>
       )}
+      </div>
       <div style={dividerStyle} />
 
       {/* ── 6. Appearance section ── */}
