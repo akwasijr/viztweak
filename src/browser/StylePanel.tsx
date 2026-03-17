@@ -409,7 +409,7 @@ export function StylePanel({
           </div>
           {/* Position type */}
           <div style={rowStyle}>
-            <span style={subLabelStyle}>Type</span>
+            <span style={{ ...subLabelStyle, width: "36px", flexShrink: 0 }}>Type</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <SelectInput
                 value={positionType}
@@ -467,7 +467,7 @@ export function StylePanel({
         <div style={sectionBodyStyle}>
           {/* Display toggle */}
           <div style={rowStyle}>
-            <span style={subLabelStyle}>Display</span>
+            <span style={{ ...subLabelStyle, width: "46px", flexShrink: 0 }}>Display</span>
             <ToggleGroup
               value={display}
               onChange={(v) => {
@@ -519,7 +519,7 @@ export function StylePanel({
                     />
                   </div>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ width: "60px", flexShrink: 0 }}>
                   <span style={subLabelStyle}>Gap</span>
                   <div style={{ marginTop: "4px" }}>
                     <NumericInput
@@ -536,7 +536,7 @@ export function StylePanel({
               </div>
               {/* Direction toggle */}
               <div style={rowStyle}>
-                <span style={subLabelStyle}>Direction</span>
+                <span style={{ ...subLabelStyle, width: "54px", flexShrink: 0 }}>Direction</span>
                 <ToggleGroup
                   value={flexDirection}
                   onChange={(v) => {
@@ -862,10 +862,11 @@ export function StylePanel({
                     width: "100%",
                     height: "var(--vt-input-height)",
                     background: "var(--vt-input-bg)",
-                    border: "1px solid var(--vt-border)",
+                    border: "1px solid var(--vt-input-border)",
                     borderRadius: "var(--vt-input-radius)",
                     color: "var(--vt-text-primary)",
-                    fontSize: "var(--vt-font-size-input)",
+                    fontSize: "var(--vt-font-size-value)",
+                    fontFamily: "var(--vt-font)",
                     padding: "0 6px",
                     outline: "none",
                     boxSizing: "border-box",
@@ -948,7 +949,7 @@ export function StylePanel({
           )}
           {/* Overflow */}
           <div style={rowStyle}>
-            <span style={subLabelStyle}>Overflow</span>
+            <span style={{ ...subLabelStyle, width: "54px", flexShrink: 0 }}>Overflow</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <SelectInput
                 value={overflow}
