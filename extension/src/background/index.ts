@@ -10,28 +10,48 @@ chrome.runtime.onInstalled.addListener(() => {
     title: "Inspect with VizTweak",
     contexts: ["all"],
   });
+
+  // Inject content script into all existing tabs so user doesn't need to reload
+  chrome.tabs.query({}, (tabs) => {
+    for (const tab of tabs) {
+      if (tab.id && tab.url && !tab.url.startsWith("chrome://") && !tab.url.startsWith("edge://") && !tab.url.startsWith("chrome-extension://")) {
+        chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ["content.js"],
+        }).catch(() => { /* tab may not allow scripting */ });
+        chrome.scripting.insertCSS({
+          target: { tabId: tab.id },
+          files: ["content.css"],
+        }).catch(() => {});
+      }
+    }
+  });
 });
 
 // Track which tabs have VizTweak active
 const activeTabs = new Set<number>();
 
-// Handle context menu click
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+// Handle context menu click - open side panel AND activate inspect
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "viztweak-inspect" && tab?.id) {
-    chrome.tabs.sendMessage(tab.id, { type: "ACTIVATE" });
+    // Open the side panel first
+    await chrome.sidePanel.open({ tabId: tab.id }).catch(() => {});
+    // Then activate inspect in content script
+    chrome.tabs.sendMessage(tab.id, { type: "ACTIVATE" }).catch(() => {});
     activeTabs.add(tab.id);
     updateBadge(tab.id);
   }
 });
 
 // Handle keyboard shortcut
-chrome.commands.onCommand.addListener((command, tab) => {
+chrome.commands.onCommand.addListener(async (command, tab) => {
   if (command === "toggle-inspect" && tab?.id) {
     if (activeTabs.has(tab.id)) {
-      chrome.tabs.sendMessage(tab.id, { type: "DEACTIVATE" });
+      chrome.tabs.sendMessage(tab.id, { type: "DEACTIVATE" }).catch(() => {});
       activeTabs.delete(tab.id);
     } else {
-      chrome.tabs.sendMessage(tab.id, { type: "ACTIVATE" });
+      await chrome.sidePanel.open({ tabId: tab.id }).catch(() => {});
+      chrome.tabs.sendMessage(tab.id, { type: "ACTIVATE" }).catch(() => {});
       activeTabs.add(tab.id);
     }
     updateBadge(tab.id);

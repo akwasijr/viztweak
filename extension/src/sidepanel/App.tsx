@@ -226,14 +226,25 @@ export default function App() {
         setStyles(msg.payload.computedStyles || {});
         setInspecting(false);
       }
-      if (msg.type === "PONG") {
+      if (msg.type === "PONG" && msg.payload) {
         setConnected(true);
+        // If content script says inspect is active, reflect that
+        if (msg.payload.active) setInspecting(true);
       }
     };
     chrome.runtime.onMessage.addListener(handler);
 
-    // Ping content script to check if it's loaded
-    chrome.runtime.sendMessage({ type: "PING" }).catch(() => {});
+    // Ping content script to check connection, then auto-activate inspect
+    chrome.runtime.sendMessage({ type: "PING" }).then((res) => {
+      if (res) {
+        setConnected(true);
+        // Auto-start inspect when side panel opens
+        if (!res.payload?.hasSelection) {
+          chrome.runtime.sendMessage({ type: "ACTIVATE" }).catch(() => {});
+          setInspecting(true);
+        }
+      }
+    }).catch(() => {});
 
     return () => chrome.runtime.onMessage.removeListener(handler);
   }, []);
@@ -340,22 +351,34 @@ export default function App() {
 
       {/* Body */}
       <div className="vt-body">
-        {tab === "design" && (
+        {!connected && (
+          <div className="vt-empty">
+            <div style={{ fontSize: 24, marginBottom: 4 }}>!</div>
+            <div><strong>Reload the page</strong> to connect VizTweak</div>
+            <div style={{ fontSize: 10, marginTop: 4 }}>The content script needs to be injected into the page first</div>
+          </div>
+        )}
+
+        {connected && tab === "design" && (
           selected ? (
             <StyleEditor element={selected.element} styles={styles} applyStyle={applyStyle} />
           ) : (
             <div className="vt-empty">
               <CrosshairIcon />
-              <div>Click <strong>Inspect</strong> then select an element on the page</div>
+              {inspecting ? (
+                <div>Click any element on the page</div>
+              ) : (
+                <div>Click <strong>Inspect</strong> then select an element on the page</div>
+              )}
             </div>
           )
         )}
 
-        {tab === "layers" && (
+        {connected && tab === "layers" && (
           <LayerTree nodes={domTree} onRefresh={loadDomTree} />
         )}
 
-        {tab === "inspect" && (
+        {connected && tab === "inspect" && (
           selected ? (
             <InspectPanel element={selected.element} styles={styles} />
           ) : (
@@ -365,7 +388,7 @@ export default function App() {
           )
         )}
 
-        {tab === "a11y" && (
+        {connected && tab === "a11y" && (
           <A11yPanel issues={a11yIssues} onRefresh={runA11y} />
         )}
       </div>

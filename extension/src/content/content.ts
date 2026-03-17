@@ -3,9 +3,13 @@
 
 import type { Message, SelectedElementData, ElementInfo } from "../shared/messages";
 
-// ---------------------------------------------------------------------------
-// State
-// ---------------------------------------------------------------------------
+// Prevent double-initialization if injected by both manifest and scripting API
+if (!(window as any).__viztweak_loaded__) {
+(window as any).__viztweak_loaded__ = true;
+init();
+}
+
+function init() {
 
 let active = false;
 let selectedEl: HTMLElement | null = null;
@@ -641,3 +645,5 @@ function injectSVGFilters() {
 // ---------------------------------------------------------------------------
 
 console.log("[VizTweak] Content script loaded");
+
+} // end init()
