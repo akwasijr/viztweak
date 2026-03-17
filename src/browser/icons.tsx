@@ -348,6 +348,54 @@ export function IconRedo({ size, className }: IconProps) {
   );
 }
 
+// ─── Gear ────────────────────────────────────────────────────
+
+export function IconGear({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <circle cx="8" cy="8" r="2" />
+      <path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14M3.8 3.8l1 1M11.2 11.2l1 1M3.8 12.2l1-1M11.2 4.8l1-1" />
+    </Svg>
+  );
+}
+
+// ─── Trash ───────────────────────────────────────────────────
+
+export function IconTrash({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <polyline points="4,5 12,5" />
+      <path d="M5 5v7a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V5" />
+      <path d="M6.5 5V4a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1" />
+    </Svg>
+  );
+}
+
+// ─── Layout Wrap ─────────────────────────────────────────────
+
+export function IconLayoutWrap({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="2" y="3" width="4" height="4" rx="0.5" />
+      <rect x="8" y="3" width="4" height="4" rx="0.5" />
+      <rect x="2" y="9" width="4" height="4" rx="0.5" />
+    </Svg>
+  );
+}
+
+// ─── Space Between ───────────────────────────────────────────
+
+export function IconSpaceBetween({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <line x1="2" y1="3" x2="2" y2="13" />
+      <line x1="14" y1="3" x2="14" y2="13" />
+      <rect x="4.5" y="5" width="3" height="6" rx="0.5" />
+      <rect x="8.5" y="5" width="3" height="6" rx="0.5" />
+    </Svg>
+  );
+}
+
 // ─── Reset ───────────────────────────────────────────────────
 
 export function IconReset({ size, className }: IconProps) {

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { IconChevronDown, IconChevronRight, IconPlus } from "./icons.js";
+import { IconChevronDown, IconChevronRight, IconPlus, IconEye, IconEyeOff, IconMinus } from "./icons.js";
 
 // ─── Shared styles ───────────────────────────────────────────
 
@@ -523,6 +523,7 @@ interface SectionHeaderProps {
   expanded: boolean;
   onToggle: () => void;
   onAdd?: () => void;
+  actionIcon?: React.ReactNode;
 }
 
 export function SectionHeader({
@@ -530,6 +531,7 @@ export function SectionHeader({
   expanded,
   onToggle,
   onAdd,
+  actionIcon,
 }: SectionHeaderProps) {
   const [hovered, setHovered] = useState(false);
   const [addHovered, setAddHovered] = useState(false);
@@ -601,9 +603,280 @@ export function SectionHeader({
             transition: "background var(--vt-transition-fast)",
           }}
         >
-          <IconPlus size={12} />
+          {actionIcon || <IconPlus size={12} />}
         </button>
       )}
+    </div>
+  );
+}
+
+// ─── 6. DualInput ────────────────────────────────────────────
+
+interface DualInputProps {
+  leftLabel: string;
+  leftValue: number;
+  onLeftChange: (v: number) => void;
+  rightLabel: string;
+  rightValue: number;
+  onRightChange: (v: number) => void;
+  leftSuffix?: string;
+  rightSuffix?: string;
+  leftMin?: number;
+  leftMax?: number;
+  rightMin?: number;
+  rightMax?: number;
+  step?: number;
+}
+
+export function DualInput({
+  leftLabel,
+  leftValue,
+  onLeftChange,
+  rightLabel,
+  rightValue,
+  onRightChange,
+  leftSuffix,
+  rightSuffix,
+  leftMin,
+  leftMax,
+  rightMin,
+  rightMax,
+  step,
+}: DualInputProps) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <NumericInput
+          label={leftLabel}
+          value={leftValue}
+          onChange={onLeftChange}
+          suffix={leftSuffix}
+          min={leftMin}
+          max={leftMax}
+          step={step}
+        />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <NumericInput
+          label={rightLabel}
+          value={rightValue}
+          onChange={onRightChange}
+          suffix={rightSuffix}
+          min={rightMin}
+          max={rightMax}
+          step={step}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── 7. CheckboxRow ──────────────────────────────────────────
+
+interface CheckboxRowProps {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}
+
+export function CheckboxRow({ label, checked, onChange }: CheckboxRowProps) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <label
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        cursor: "pointer",
+        padding: "2px 0",
+        borderRadius: "4px",
+        userSelect: "none",
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div
+        style={{
+          width: "14px",
+          height: "14px",
+          borderRadius: "3px",
+          border: `1px solid ${checked ? "var(--vt-accent)" : "var(--vt-input-border)"}`,
+          background: checked ? "var(--vt-accent)" : "var(--vt-input-bg)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          transition: "all var(--vt-transition-fast)",
+          flexShrink: 0,
+        }}
+      >
+        {checked && (
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path
+              d="M2 5l2.5 2.5L8 3"
+              stroke="#fff"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </div>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={() => onChange(!checked)}
+        style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
+      />
+      <span
+        style={{
+          fontSize: "var(--vt-font-size-label)",
+          color: hovered ? "var(--vt-text-primary)" : "var(--vt-text-secondary)",
+          transition: "color var(--vt-transition-fast)",
+        }}
+      >
+        {label}
+      </span>
+    </label>
+  );
+}
+
+// ─── 8. AlignmentGrid ────────────────────────────────────────
+
+interface AlignmentGridProps {
+  justify: string;
+  align: string;
+  onChange: (justify: string, align: string) => void;
+}
+
+const ALIGN_VALS = ["flex-start", "center", "flex-end"] as const;
+
+export function AlignmentGrid({ justify, align, onChange }: AlignmentGridProps) {
+  const [hoveredCell, setHoveredCell] = useState<string | null>(null);
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 12px)",
+        gridTemplateRows: "repeat(3, 12px)",
+        gap: "4px",
+        padding: "4px",
+        background: "var(--vt-input-bg)",
+        borderRadius: "var(--vt-input-radius)",
+        border: "1px solid var(--vt-input-border)",
+      }}
+    >
+      {ALIGN_VALS.map((rowVal) =>
+        ALIGN_VALS.map((colVal) => {
+          const isActive = align === rowVal && justify === colVal;
+          const cellKey = `${rowVal}-${colVal}`;
+          const isHovered = hoveredCell === cellKey;
+          return (
+            <button
+              key={cellKey}
+              onClick={() => onChange(colVal, rowVal)}
+              onMouseEnter={() => setHoveredCell(cellKey)}
+              onMouseLeave={() => setHoveredCell(null)}
+              style={{
+                width: "12px",
+                height: "12px",
+                borderRadius: "50%",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+                background: isActive
+                  ? "var(--vt-accent)"
+                  : isHovered
+                    ? "var(--vt-text-secondary)"
+                    : "var(--vt-text-disabled)",
+                transition: "background var(--vt-transition-fast)",
+                transform: isActive ? "scale(1.15)" : "scale(1)",
+              }}
+              title={`${colVal} / ${rowVal}`}
+            />
+          );
+        }),
+      )}
+    </div>
+  );
+}
+
+// ─── 9. FillRow ──────────────────────────────────────────────
+
+const iconBtnStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "20px",
+  height: "20px",
+  border: "none",
+  background: "transparent",
+  borderRadius: "4px",
+  cursor: "pointer",
+  color: "var(--vt-text-secondary)",
+  padding: 0,
+  flexShrink: 0,
+  transition: "background var(--vt-transition-fast), color var(--vt-transition-fast)",
+};
+
+interface FillRowProps {
+  color: string;
+  onChange: (hex: string) => void;
+  visible: boolean;
+  onVisibilityToggle: () => void;
+  onRemove: () => void;
+  opacity?: number;
+  onOpacityChange?: (v: number) => void;
+}
+
+export function FillRow({
+  color,
+  onChange,
+  visible,
+  onVisibilityToggle,
+  onRemove,
+  opacity,
+  onOpacityChange,
+}: FillRowProps) {
+  const [eyeHovered, setEyeHovered] = useState(false);
+  const [removeHovered, setRemoveHovered] = useState(false);
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+      <div style={{ flex: 1, minWidth: 0, opacity: visible ? 1 : 0.4 }}>
+        <ColorInput
+          value={color}
+          onChange={onChange}
+          opacity={opacity}
+          onOpacityChange={onOpacityChange}
+        />
+      </div>
+      <button
+        onClick={onVisibilityToggle}
+        onMouseEnter={() => setEyeHovered(true)}
+        onMouseLeave={() => setEyeHovered(false)}
+        style={{
+          ...iconBtnStyle,
+          background: eyeHovered ? "var(--vt-hover)" : "transparent",
+          color: visible ? "var(--vt-text-secondary)" : "var(--vt-text-disabled)",
+        }}
+        title={visible ? "Hide fill" : "Show fill"}
+      >
+        {visible ? <IconEye size={12} /> : <IconEyeOff size={12} />}
+      </button>
+      <button
+        onClick={onRemove}
+        onMouseEnter={() => setRemoveHovered(true)}
+        onMouseLeave={() => setRemoveHovered(false)}
+        style={{
+          ...iconBtnStyle,
+          background: removeHovered ? "var(--vt-hover)" : "transparent",
+        }}
+        title="Remove fill"
+      >
+        <IconMinus size={12} />
+      </button>
     </div>
   );
 }

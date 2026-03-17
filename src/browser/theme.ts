@@ -6,27 +6,27 @@ const THEME_STYLE_ID = "viztweak-theme";
 
 export const themeCSS = /* css */ `
 [${THEME_ATTR}] {
-  /* ── Surface colors ── */
-  --vt-panel-bg: #F5F5F5;
-  --vt-surface: #FFFFFF;
-  --vt-border: #E4E4E4;
-  --vt-hover: #EBEBEB;
+  /* ── Surface colors (dark) ── */
+  --vt-panel-bg: #1E1E1E;
+  --vt-surface: #252525;
+  --vt-border: #383838;
+  --vt-hover: #2E2E2E;
 
   /* ── Text colors ── */
-  --vt-text-primary: #1E1E1E;
+  --vt-text-primary: #E8E8E8;
   --vt-text-secondary: #8C8C8C;
-  --vt-text-disabled: #B3B3B3;
+  --vt-text-disabled: #5C5C5C;
 
   /* ── Accent / semantic ── */
   --vt-accent: #0C8CE9;
-  --vt-accent-bg: #E8F4FD;
+  --vt-accent-bg: rgba(12, 140, 233, 0.15);
   --vt-error: #F24822;
   --vt-success: #14AE5C;
   --vt-warning: #FFC700;
 
   /* ── Input ── */
-  --vt-input-bg: #FFFFFF;
-  --vt-input-border: #CDCDCD;
+  --vt-input-bg: #2C2C2C;
+  --vt-input-border: #3A3A3A;
   --vt-input-border-focus: #0C8CE9;
 
   /* ── Typography ── */
@@ -40,8 +40,8 @@ export const themeCSS = /* css */ `
   --vt-font-weight-semibold: 600;
 
   /* ── Sizing ── */
-  --vt-input-height: 24px;
-  --vt-input-radius: 4px;
+  --vt-input-height: 28px;
+  --vt-input-radius: 6px;
   --vt-panel-width: 312px;
   --vt-panel-radius: 10px;
   --vt-panel-margin: 12px;
@@ -49,14 +49,14 @@ export const themeCSS = /* css */ `
   --vt-row-gap: 4px;
   --vt-icon-size: 16px;
   --vt-icon-size-sm: 12px;
-  --vt-section-header-height: 28px;
+  --vt-section-header-height: 32px;
   --vt-tab-height: 32px;
   --vt-toolbar-height: 32px;
 
   /* ── Shadows ── */
-  --vt-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --vt-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --vt-shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  --vt-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --vt-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --vt-shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15);
 
   /* ── Transitions ── */
   --vt-transition-fast: 120ms ease;
