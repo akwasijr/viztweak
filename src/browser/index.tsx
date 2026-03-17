@@ -312,7 +312,7 @@ function VizTweakInner() {
     top: "var(--vt-panel-margin)",
     [panelSide]: "var(--vt-panel-margin)",
     width: "var(--vt-panel-width)",
-    height: "calc(100vh - var(--vt-panel-margin) * 2)",
+    height: "calc(100vh - var(--vt-panel-margin) * 2 - 52px)",
     background: "var(--vt-panel-bg)",
     border: "1px solid var(--vt-border)",
     borderRadius: "var(--vt-panel-radius)",
