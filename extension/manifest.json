@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "VizTweak",
+  "version": "1.0.0",
+  "description": "Visual UI inspector and style editor. Tweak any page, copy changes to your AI coding agent.",
+  "permissions": [
+    "activeTab",
+    "sidePanel",
+    "scripting",
+    "contextMenus",
+    "storage"
+  ],
+  "action": {
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    },
+    "default_title": "VizTweak"
+  },
+  "side_panel": {
+    "default_path": "src/sidepanel/index.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "commands": {
+    "toggle-inspect": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+V",
+        "mac": "Command+Shift+V"
+      },
+      "description": "Toggle element inspection"
+    }
+  }
+}
