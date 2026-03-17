@@ -667,6 +667,29 @@ function VizTweakInner() {
                 >
                   <IconSend size={12} />
                 </button>
+                {messages.length > 0 && (
+                  <button
+                    onClick={() => setMessages([])}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "26px",
+                      height: "26px",
+                      border: "none",
+                      background: "transparent",
+                      color: "var(--vt-text-disabled)",
+                      borderRadius: "var(--vt-input-radius)",
+                      cursor: "pointer",
+                      padding: 0,
+                      flexShrink: 0,
+                    }}
+                    aria-label="Clear chat"
+                    title="Clear chat"
+                  >
+                    <IconReset size={12} />
+                  </button>
+                )}
               </div>
             </div>
           ) : (
