@@ -492,7 +492,12 @@ function onMouseClick(e: MouseEvent) {
   captureBaseline(el);
 
   const data = resolveElement(el);
-  chrome.runtime.sendMessage({ type: "ELEMENT_SELECTED", payload: data });
+  console.log("[VizTweak] Element selected:", el.tagName, "sending to background");
+  chrome.runtime.sendMessage({ type: "ELEMENT_SELECTED", payload: data }).then(() => {
+    console.log("[VizTweak] ELEMENT_SELECTED sent successfully");
+  }).catch((err: any) => {
+    console.error("[VizTweak] Failed to send ELEMENT_SELECTED:", err);
+  });
 }
 
 function activate() {

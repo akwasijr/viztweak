@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import type { Message, SelectedElementData, ElementInfo } from "../shared/messages";
 
 // ---------------------------------------------------------------------------
@@ -218,94 +218,125 @@ export default function App() {
     localStorage.setItem("viztweak-theme", theme);
   }, [theme]);
 
-  // Listen for messages from content script (via background)
+  // Persistent port connection to background
+  const portRef = useRef<chrome.runtime.Port | null>(null);
+
   useEffect(() => {
-    const handler = (msg: Message) => {
+    // Connect to background via long-lived port
+    const port = chrome.runtime.connect({ name: "viztweak-panel" });
+    portRef.current = port;
+    console.log("[VizTweak Panel] Connected to background via port");
+
+    // Listen for push messages from content script (via background)
+    port.onMessage.addListener((msg: any) => {
+      console.log("[VizTweak Panel] Port message:", msg.type);
+
       if (msg.type === "ELEMENT_SELECTED" && msg.payload) {
+        console.log("[VizTweak Panel] Got element:", msg.payload.element?.tagName);
         setSelected(msg.payload as SelectedElementData);
         setStyles(msg.payload.computedStyles || {});
         setInspecting(false);
       }
+
       if (msg.type === "PONG" && msg.payload) {
         setConnected(true);
-        // If content script says inspect is active, reflect that
         if (msg.payload.active) setInspecting(true);
       }
-    };
-    chrome.runtime.onMessage.addListener(handler);
 
-    // Ping content script to check connection, then auto-activate inspect
-    chrome.runtime.sendMessage({ type: "PING" }).then((res) => {
-      if (res) {
+      // Handle responses to commands we sent
+      if (msg.type === "PING_RESPONSE" && msg.payload) {
         setConnected(true);
-        // Auto-start inspect when side panel opens
-        if (!res.payload?.hasSelection) {
-          chrome.runtime.sendMessage({ type: "ACTIVATE" }).catch(() => {});
+        if (!msg.payload.payload?.hasSelection) {
+          port.postMessage({ type: "ACTIVATE" });
           setInspecting(true);
         }
       }
-    }).catch(() => {});
 
-    return () => chrome.runtime.onMessage.removeListener(handler);
+      if (msg.type === "APPLY_STYLE_RESPONSE" && msg.payload?.computedStyles) {
+        setStyles(msg.payload.computedStyles);
+      }
+      if (msg.type === "UNDO_RESPONSE" && msg.payload?.computedStyles) {
+        setStyles(msg.payload.computedStyles);
+      }
+      if (msg.type === "REDO_RESPONSE" && msg.payload?.computedStyles) {
+        setStyles(msg.payload.computedStyles);
+      }
+      if (msg.type === "GET_DOM_TREE_RESPONSE" && msg.payload?.tree) {
+        setDomTree(msg.payload.tree);
+      }
+      if (msg.type === "RUN_ACCESSIBILITY_RESPONSE" && msg.payload?.issues) {
+        setA11yIssues(msg.payload.issues);
+      }
+      if (msg.type === "COPY_CHANGES_RESPONSE" && msg.payload?.text) {
+        navigator.clipboard.writeText(msg.payload.text).then(() => {
+          setCopyFeedback(true);
+          setTimeout(() => setCopyFeedback(false), 2000);
+        });
+      }
+    });
+
+    port.onDisconnect.addListener(() => {
+      console.log("[VizTweak Panel] Port disconnected");
+      portRef.current = null;
+      setConnected(false);
+    });
+
+    // Ping content script on connect
+    port.postMessage({ type: "PING" });
+
+    return () => {
+      port.disconnect();
+      portRef.current = null;
+    };
   }, []);
 
-  // Helper: send message to content script via background
-  const send = useCallback(async (msg: Message): Promise<any> => {
-    try {
-      return await chrome.runtime.sendMessage(msg);
-    } catch { return null; }
+  // Helper: send message to content script via port
+  const send = useCallback((msg: Message) => {
+    if (portRef.current) {
+      portRef.current.postMessage(msg);
+    }
   }, []);
 
   // Actions
-  const toggleInspect = useCallback(async () => {
+  const toggleInspect = useCallback(() => {
     if (inspecting) {
-      await send({ type: "DEACTIVATE" });
+      send({ type: "DEACTIVATE" });
       setInspecting(false);
     } else {
-      await send({ type: "ACTIVATE" });
+      send({ type: "ACTIVATE" });
       setInspecting(true);
     }
   }, [inspecting, send]);
 
-  const handleUndo = useCallback(async () => {
-    const res = await send({ type: "UNDO" });
-    if (res?.computedStyles) setStyles(res.computedStyles);
+  const handleUndo = useCallback(() => {
+    send({ type: "UNDO" });
   }, [send]);
 
-  const handleRedo = useCallback(async () => {
-    const res = await send({ type: "REDO" });
-    if (res?.computedStyles) setStyles(res.computedStyles);
+  const handleRedo = useCallback(() => {
+    send({ type: "REDO" });
   }, [send]);
 
-  const handleReset = useCallback(async () => {
-    await send({ type: "RESET_ALL" });
+  const handleReset = useCallback(() => {
+    send({ type: "RESET_ALL" });
     setSelected(null);
     setStyles({});
     setChangeCount(0);
   }, [send]);
 
-  const handleCopy = useCallback(async () => {
-    const res = await send({ type: "COPY_CHANGES" });
-    if (res?.text) {
-      await navigator.clipboard.writeText(res.text);
-      setCopyFeedback(true);
-      setTimeout(() => setCopyFeedback(false), 2000);
-    }
+  const handleCopy = useCallback(() => {
+    send({ type: "COPY_CHANGES" });
   }, [send]);
 
-  const applyStyle = useCallback(async (property: string, value: string) => {
-    const res = await send({ type: "APPLY_STYLE", payload: { property, value } });
-    if (res?.computedStyles) setStyles(res.computedStyles);
+  const applyStyle = useCallback((property: string, value: string) => {
+    send({ type: "APPLY_STYLE", payload: { property, value } });
   }, [send]);
 
-  const loadDomTree = useCallback(async () => {
-    const res = await send({ type: "GET_DOM_TREE" });
-    if (res?.tree) setDomTree(res.tree);
+  const loadDomTree = useCallback(() => {
+    send({ type: "GET_DOM_TREE" });
   }, [send]);
 
-  const runA11y = useCallback(async () => {
-    const res = await send({ type: "RUN_ACCESSIBILITY", payload: { elementOnly: false } });
-    if (res?.issues) setA11yIssues(res.issues);
+  const runA11y = useCallback(() => {
+    send({ type: "RUN_ACCESSIBILITY", payload: { elementOnly: false } });
   }, [send]);
 
   // Load DOM tree when switching to layers tab
