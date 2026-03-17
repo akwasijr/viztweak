@@ -98,6 +98,7 @@ export const themeCSS = /* css */ `
 #viztweak-portal,
 #viztweak-portal * {
   font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+  font-weight: 400 !important;
   line-height: 16px !important;
   letter-spacing: normal !important;
   text-transform: none !important;

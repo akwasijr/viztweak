@@ -71,7 +71,6 @@ function VizTweakInner() {
   const [activeTab, setActiveTab] = useState<PanelTab>("design");
   const [panelSide, setPanelSide] = useState<PanelSide>("right");
   const [pseudoState, setPseudoState] = useState<PseudoState>("default");
-  const [copiedStyles, setCopiedStyles] = useState<Record<string, string> | null>(null);
   const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
   const [redoStack, setRedoStack] = useState<UndoEntry[]>([]);
   const [showSpacingOverlay, setShowSpacingOverlay] = useState(false);
@@ -202,6 +201,9 @@ function VizTweakInner() {
       setElementInfo(resolveElement(el));
       setInspecting(false);
       setPseudoState("default");
+      // Clear undo/redo — stacks are per-element, not global
+      setUndoStack([]);
+      setRedoStack([]);
     },
     [diffEngine],
   );
@@ -257,22 +259,15 @@ function VizTweakInner() {
     }
   }, [selectedElement, diffEngine]);
 
-  const handleCopyStyles = useCallback(() => {
-    if (!selectedElement) return;
-    const computed = window.getComputedStyle(selectedElement);
-    const styles: Record<string, string> = {};
-    for (const prop of ALL_EDITABLE_PROPERTIES) {
-      const cssName = prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
-      styles[prop] = computed.getPropertyValue(cssName);
-    }
-    setCopiedStyles(styles);
-  }, [selectedElement]);
-
   // Copy all visual changes to clipboard as formatted markdown
+  const [copyFeedback, setCopyFeedback] = useState(false);
   const handleCopyChanges = useCallback(() => {
     const text = diffEngine.formatAllChangesText();
-    navigator.clipboard.writeText(text).catch(() => {
-      // Fallback: create textarea and exec copy
+    const showFeedback = () => {
+      setCopyFeedback(true);
+      setTimeout(() => setCopyFeedback(false), 1500);
+    };
+    navigator.clipboard.writeText(text).then(showFeedback).catch(() => {
       const ta = document.createElement("textarea");
       ta.value = text;
       ta.style.cssText = "position:fixed;opacity:0";
@@ -280,6 +275,7 @@ function VizTweakInner() {
       ta.select();
       document.execCommand("copy");
       ta.remove();
+      showFeedback();
     });
   }, [diffEngine]);
 
@@ -297,19 +293,6 @@ function VizTweakInner() {
     }, 500);
     return () => clearInterval(interval);
   }, [diffEngine]);
-
-  const handlePasteStyles = useCallback(() => {
-    if (!selectedElement || !copiedStyles) return;
-    for (const [prop, val] of Object.entries(copiedStyles)) {
-      if (!val) continue;
-      const cssName = prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
-      const currentValue = selectedElement.style.getPropertyValue(cssName);
-      setUndoStack((prev) => [...prev, { element: selectedElement, property: prop, previousValue: currentValue || "" }]);
-      selectedElement.style.setProperty(cssName, val);
-    }
-    setRedoStack([]);
-    setElementInfo(resolveElement(selectedElement));
-  }, [selectedElement, copiedStyles]);
 
   const handleToggleSide = useCallback(() => {
     setPanelSide((prev) => (prev === "right" ? "left" : "right"));
@@ -1001,10 +984,10 @@ function VizTweakInner() {
 
                 <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
 
-                {/* Copy all changes — with change count badge */}
+                {/* Copy all changes — with change count badge + copied feedback */}
                 <div style={{ position: "relative", display: "inline-flex" }}>
-                  <PillBtn icon={<IconCopy size={15} />} tooltip="Copy all changes to clipboard" onClick={handleCopyChanges} disabled={changeCount === 0} />
-                  {changeCount > 0 && (
+                  <PillBtn icon={<IconCopy size={15} />} tooltip={copyFeedback ? "Copied!" : "Copy all changes"} onClick={handleCopyChanges} disabled={changeCount === 0} />
+                  {changeCount > 0 && !copyFeedback && (
                     <span
                       data-viztweak=""
                       style={{
@@ -1027,6 +1010,31 @@ function VizTweakInner() {
                       }}
                     >
                       {changeCount}
+                    </span>
+                  )}
+                  {copyFeedback && (
+                    <span
+                      data-viztweak=""
+                      style={{
+                        position: "absolute",
+                        top: "-4px",
+                        right: "-4px",
+                        minWidth: "16px",
+                        height: "16px",
+                        borderRadius: "8px",
+                        background: "var(--vt-success)",
+                        color: "#fff",
+                        fontSize: "8px",
+                        fontWeight: 600,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "0 3px",
+                        lineHeight: 1,
+                        pointerEvents: "none",
+                      }}
+                    >
+                      ✓
                     </span>
                   )}
                 </div>

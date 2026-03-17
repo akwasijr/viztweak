@@ -110,19 +110,21 @@ function auditElement(el: HTMLElement): A11yIssue[] {
     }
   }
 
-  // 4. Tap target size
+  // 4. Tap target size (skip hidden/offscreen elements)
   const rect = el.getBoundingClientRect();
   if (tag === "button" || tag === "a" || tag === "input" || el.getAttribute("role") === "button") {
     const w = rect.width;
     const h = rect.height;
-    if (w < 44 || h < 44) {
-      issues.push({
-        type: "warning",
-        label: "Tap target",
-        detail: `${Math.round(w)}×${Math.round(h)}px — recommended minimum 44×44px`,
-      });
-    } else {
-      issues.push({ type: "pass", label: "Tap target", detail: `${Math.round(w)}×${Math.round(h)}px ✓` });
+    if (w > 0 && h > 0 && el.offsetParent !== null) {
+      if (w < 44 || h < 44) {
+        issues.push({
+          type: "warning",
+          label: "Tap target",
+          detail: `${Math.round(w)}×${Math.round(h)}px — recommended minimum 44×44px`,
+        });
+      } else {
+        issues.push({ type: "pass", label: "Tap target", detail: `${Math.round(w)}×${Math.round(h)}px ✓` });
+      }
     }
   }
 
