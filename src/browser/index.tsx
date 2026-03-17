@@ -312,7 +312,7 @@ function VizTweakInner() {
     top: "var(--vt-panel-margin)",
     [panelSide]: "var(--vt-panel-margin)",
     width: "var(--vt-panel-width)",
-    height: "calc(100vh - var(--vt-panel-margin) * 2 - 52px)",
+    height: "calc(100vh - var(--vt-panel-margin) * 2 - 56px)",
     background: "var(--vt-panel-bg)",
     border: "1px solid var(--vt-border)",
     borderRadius: "var(--vt-panel-radius)",
@@ -582,11 +582,11 @@ function VizTweakInner() {
                   >
                     <div
                       style={{
-                        maxWidth: "90%",
+                        maxWidth: "80%",
                         padding: "6px 10px",
                         borderRadius: msg.from === "designer" ? "10px 10px 2px 10px" : "10px 10px 10px 2px",
                         fontSize: "11px",
-                        lineHeight: "16px",
+                        lineHeight: "15px",
                         background: msg.from === "designer" ? "var(--vt-accent)" : "var(--vt-hover)",
                         color: msg.from === "designer" ? "#FFFFFF" : "var(--vt-text-primary)",
                         wordBreak: "break-word",

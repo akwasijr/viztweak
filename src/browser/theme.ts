@@ -44,7 +44,7 @@ export const themeCSS = /* css */ `
   --vt-input-radius: 4px;
   --vt-panel-width: 312px;
   --vt-panel-radius: 10px;
-  --vt-panel-margin: 8px;
+  --vt-panel-margin: 12px;
   --vt-section-padding: 8px 12px;
   --vt-row-gap: 4px;
   --vt-icon-size: 16px;
