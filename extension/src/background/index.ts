@@ -1,24 +1,72 @@
 // Background service worker for VizTweak extension
 
+// Track the last web page tab the user interacted with
+let lastWebTabId: number | null = null;
+
+chrome.tabs.onActivated.addListener(async ({ tabId }) => {
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    if (tab.url && !tab.url.startsWith("chrome") && !tab.url.startsWith("edge")) {
+      lastWebTabId = tabId;
+    }
+  } catch {}
+});
+
+// Also track when a tab is updated (navigated)
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete" && tab.url &&
+      !tab.url.startsWith("chrome") && !tab.url.startsWith("edge")) {
+    lastWebTabId = tabId;
+  }
+});
+
+// Helper to find the web page tab to send messages to
+async function getTargetTabId(): Promise<number | null> {
+  // First try the tracked tab
+  if (lastWebTabId) {
+    try {
+      const tab = await chrome.tabs.get(lastWebTabId);
+      if (tab.url && !tab.url.startsWith("chrome") && !tab.url.startsWith("edge")) {
+        return lastWebTabId;
+      }
+    } catch {}
+  }
+  // Fallback: query for last focused window's active tab
+  const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  for (const tab of tabs) {
+    if (tab.id && tab.url && !tab.url.startsWith("chrome") && !tab.url.startsWith("edge")) {
+      lastWebTabId = tab.id;
+      return tab.id;
+    }
+  }
+  // Final fallback: any active tab
+  const allActive = await chrome.tabs.query({ active: true });
+  for (const tab of allActive) {
+    if (tab.id && tab.url && !tab.url.startsWith("chrome") && !tab.url.startsWith("edge")) {
+      lastWebTabId = tab.id;
+      return tab.id;
+    }
+  }
+  return null;
+}
+
 chrome.runtime.onInstalled.addListener(() => {
-  // Set side panel behavior: open on action click
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 
-  // Context menu
   chrome.contextMenus.create({
     id: "viztweak-inspect",
     title: "Inspect with VizTweak",
     contexts: ["all"],
   });
 
-  // Inject content script into all existing tabs so user doesn't need to reload
+  // Inject content script into all existing tabs
   chrome.tabs.query({}, (tabs) => {
     for (const tab of tabs) {
-      if (tab.id && tab.url && !tab.url.startsWith("chrome://") && !tab.url.startsWith("edge://") && !tab.url.startsWith("chrome-extension://")) {
+      if (tab.id && tab.url && !tab.url.startsWith("chrome") && !tab.url.startsWith("edge") && !tab.url.startsWith("about:")) {
         chrome.scripting.executeScript({
           target: { tabId: tab.id },
           files: ["content.js"],
-        }).catch(() => { /* tab may not allow scripting */ });
+        }).catch(() => {});
         chrome.scripting.insertCSS({
           target: { tabId: tab.id },
           files: ["content.css"],
@@ -28,47 +76,51 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-// Track which tabs have VizTweak active
+// Track active inspect state per tab
 const activeTabs = new Set<number>();
 
-// Handle context menu click - open side panel AND activate inspect
+// Context menu - open side panel and activate
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "viztweak-inspect" && tab?.id) {
-    // Open the side panel first
+    lastWebTabId = tab.id;
     await chrome.sidePanel.open({ tabId: tab.id }).catch(() => {});
-    // Then activate inspect in content script
-    chrome.tabs.sendMessage(tab.id, { type: "ACTIVATE" }).catch(() => {});
+    // Small delay to let content script load if just injected
+    setTimeout(() => {
+      chrome.tabs.sendMessage(tab.id!, { type: "ACTIVATE" }).catch(() => {});
+    }, 200);
     activeTabs.add(tab.id);
     updateBadge(tab.id);
   }
 });
 
-// Handle keyboard shortcut
+// Keyboard shortcut
 chrome.commands.onCommand.addListener(async (command, tab) => {
   if (command === "toggle-inspect" && tab?.id) {
+    lastWebTabId = tab.id;
     if (activeTabs.has(tab.id)) {
       chrome.tabs.sendMessage(tab.id, { type: "DEACTIVATE" }).catch(() => {});
       activeTabs.delete(tab.id);
     } else {
       await chrome.sidePanel.open({ tabId: tab.id }).catch(() => {});
-      chrome.tabs.sendMessage(tab.id, { type: "ACTIVATE" }).catch(() => {});
+      setTimeout(() => {
+        chrome.tabs.sendMessage(tab.id!, { type: "ACTIVATE" }).catch(() => {});
+      }, 200);
       activeTabs.add(tab.id);
     }
     updateBadge(tab.id);
   }
 });
 
-// Relay messages between side panel and content script
+// Message relay between side panel and content script
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  // Messages from content script (has sender.tab)
+  // Messages FROM content script (has sender.tab) - forward to side panel
   if (sender.tab?.id) {
+    lastWebTabId = sender.tab.id;
+
     if (msg.type === "ELEMENT_SELECTED" || msg.type === "STYLE_APPLIED" ||
         msg.type === "DOM_TREE" || msg.type === "ACCESSIBILITY_RESULT" ||
         msg.type === "CHANGES_COPIED" || msg.type === "PONG") {
-      // Forward to side panel by broadcasting to runtime
-      chrome.runtime.sendMessage(msg).catch(() => {
-        // Side panel might not be open yet
-      });
+      chrome.runtime.sendMessage(msg).catch(() => {});
     }
     if (msg.type === "BADGE_UPDATE") {
       chrome.action.setBadgeText({
@@ -80,33 +132,37 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return false;
   }
 
-  // Messages from side panel (no sender.tab) - forward to active tab's content script
-  if (msg.type === "ACTIVATE" || msg.type === "DEACTIVATE" ||
-      msg.type === "APPLY_STYLE" || msg.type === "UNDO" || msg.type === "REDO" ||
-      msg.type === "RESET_ALL" || msg.type === "COPY_CHANGES" ||
-      msg.type === "GET_DOM_TREE" || msg.type === "TOGGLE_OVERLAY" ||
-      msg.type === "RUN_ACCESSIBILITY" || msg.type === "COLOR_VISION" ||
-      msg.type === "PING") {
-    chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-      if (tab?.id) {
-        chrome.tabs.sendMessage(tab.id, msg).then((response) => {
-          sendResponse(response);
-        }).catch(() => sendResponse(null));
+  // Messages FROM side panel (no sender.tab) - forward to content script
+  const panelMessages = [
+    "ACTIVATE", "DEACTIVATE", "APPLY_STYLE", "UNDO", "REDO",
+    "RESET_ALL", "COPY_CHANGES", "GET_DOM_TREE", "TOGGLE_OVERLAY",
+    "RUN_ACCESSIBILITY", "COLOR_VISION", "PING",
+  ];
 
-        if (msg.type === "ACTIVATE") activeTabs.add(tab.id);
-        if (msg.type === "DEACTIVATE") activeTabs.delete(tab.id);
-        updateBadge(tab.id);
+  if (panelMessages.includes(msg.type)) {
+    getTargetTabId().then((tabId) => {
+      if (!tabId) {
+        sendResponse(null);
+        return;
       }
+      chrome.tabs.sendMessage(tabId, msg).then((response) => {
+        sendResponse(response);
+      }).catch(() => {
+        sendResponse(null);
+      });
+
+      if (msg.type === "ACTIVATE") { activeTabs.add(tabId); updateBadge(tabId); }
+      if (msg.type === "DEACTIVATE") { activeTabs.delete(tabId); updateBadge(tabId); }
     });
-    return true; // async response
+    return true; // async sendResponse
   }
 
   return false;
 });
 
-// Clean up when tab closes
 chrome.tabs.onRemoved.addListener((tabId) => {
   activeTabs.delete(tabId);
+  if (lastWebTabId === tabId) lastWebTabId = null;
 });
 
 function updateBadge(tabId: number) {

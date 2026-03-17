@@ -5,6 +5,7 @@
   "description": "Visual UI inspector and style editor. Tweak any page, copy changes to your AI coding agent.",
   "permissions": [
     "activeTab",
+    "tabs",
     "sidePanel",
     "scripting",
     "contextMenus",
