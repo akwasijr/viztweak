@@ -1,4 +1,4 @@
-// Figma UI3 design tokens as CSS custom properties — dark & light modes
+// Figma UI3 design tokens as CSS custom properties - dark & light modes
 
 export const THEME_ATTR = "data-viztweak";
 export const THEME_MODE_ATTR = "data-vt-mode";
@@ -94,7 +94,7 @@ export const themeCSS = /* css */ `
 }
 
 /* ─── Isolation: prevent inherited styles from page/body leaking in ─── */
-/* Portal is a direct child of <html>, sibling of <body> — fully isolated */
+/* Portal is a direct child of <html>, sibling of <body> - fully isolated */
 #viztweak-portal,
 #viztweak-portal * {
   font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
@@ -137,7 +137,7 @@ export function setStoredTheme(mode: ThemeMode): void {
 
 /**
  * Injects the VizTweak theme CSS into the document head.
- * Safe to call multiple times — only injects once.
+ * Safe to call multiple times - only injects once.
  */
 export function injectTheme(): void {
   if (typeof document === "undefined") return;

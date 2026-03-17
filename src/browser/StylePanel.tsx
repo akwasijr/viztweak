@@ -158,7 +158,7 @@ export function StylePanel({
   // Read computed styles as initial values
   const cs = window.getComputedStyle(element);
 
-  // Detect page-level selection (body/html) — some sections are N/A
+  // Detect page-level selection (body/html) - some sections are N/A
   const tag = element.tagName.toLowerCase();
   const isPageLevel = tag === "body" || tag === "html";
 
@@ -1167,7 +1167,7 @@ export function StylePanel({
             </>
           ) : (
             <span style={{ fontSize: "var(--vt-font-size-label)", color: "var(--vt-text-disabled)" }}>
-              No shadow — click + to add
+              No shadow - click + to add
             </span>
           )}
         </div>

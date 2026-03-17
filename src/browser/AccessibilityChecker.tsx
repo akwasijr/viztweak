@@ -73,13 +73,13 @@ function auditElement(el: HTMLElement): A11yIssue[] {
       issues.push({
         type: "pass",
         label: "Contrast",
-        detail: `${ratio.toFixed(1)}:1 — passes ${isLargeText ? "AA (large)" : "AA"}`,
+        detail: `${ratio.toFixed(1)}:1 - passes ${isLargeText ? "AA (large)" : "AA"}`,
       });
     } else {
       issues.push({
         type: "error",
         label: "Contrast",
-        detail: `${ratio.toFixed(1)}:1 — needs ${minRatio}:1 for ${isLargeText ? "large text" : "normal text"}`,
+        detail: `${ratio.toFixed(1)}:1 - needs ${minRatio}:1 for ${isLargeText ? "large text" : "normal text"}`,
       });
     }
   }
@@ -90,7 +90,7 @@ function auditElement(el: HTMLElement): A11yIssue[] {
     if (alt === null) {
       issues.push({ type: "error", label: "Alt text", detail: "Missing alt attribute on image" });
     } else if (alt === "") {
-      issues.push({ type: "warning", label: "Alt text", detail: "Empty alt — treated as decorative. Is this intentional?" });
+      issues.push({ type: "warning", label: "Alt text", detail: "Empty alt - treated as decorative. Is this intentional?" });
     } else {
       issues.push({ type: "pass", label: "Alt text", detail: `"${alt.slice(0, 40)}${alt.length > 40 ? "…" : ""}"` });
     }
@@ -120,7 +120,7 @@ function auditElement(el: HTMLElement): A11yIssue[] {
         issues.push({
           type: "warning",
           label: "Tap target",
-          detail: `${Math.round(w)}×${Math.round(h)}px — recommended minimum 44×44px`,
+          detail: `${Math.round(w)}×${Math.round(h)}px - recommended minimum 44×44px`,
         });
       } else {
         issues.push({ type: "pass", label: "Tap target", detail: `${Math.round(w)}×${Math.round(h)}px ✓` });
@@ -166,7 +166,7 @@ function auditElement(el: HTMLElement): A11yIssue[] {
           detail: `Skipped from <h${prevLevel}> to <h${level}>`,
         });
       } else {
-        issues.push({ type: "pass", label: "Heading", detail: `<h${level}> — hierarchy OK` });
+        issues.push({ type: "pass", label: "Heading", detail: `<h${level}> - hierarchy OK` });
       }
     }
   }
@@ -181,16 +181,16 @@ function auditElement(el: HTMLElement): A11yIssue[] {
   const onClick = el.getAttribute("onclick") || (el as HTMLElement & { onclick: unknown }).onclick;
   if (tag === "div" && (onClick || el.getAttribute("role") === "button")) {
     if (!el.getAttribute("tabindex")) {
-      issues.push({ type: "error", label: "Keyboard", detail: "Clickable <div> without tabindex — not keyboard accessible" });
+      issues.push({ type: "error", label: "Keyboard", detail: "Clickable <div> without tabindex - not keyboard accessible" });
     }
     if (!el.getAttribute("role")) {
-      issues.push({ type: "error", label: "Semantics", detail: "Clickable <div> without role — use <button> instead" });
+      issues.push({ type: "error", label: "Semantics", detail: "Clickable <div> without role - use <button> instead" });
     }
   }
 
   // 9. Language attribute
   if (tag === "html" && !el.getAttribute("lang")) {
-    issues.push({ type: "error", label: "Language", detail: "Missing lang attribute on <html> — screen readers need this" });
+    issues.push({ type: "error", label: "Language", detail: "Missing lang attribute on <html> - screen readers need this" });
   } else if (tag === "html") {
     issues.push({ type: "pass", label: "Language", detail: `lang="${el.getAttribute("lang")}"` });
   }
@@ -200,9 +200,9 @@ function auditElement(el: HTMLElement): A11yIssue[] {
     const text = el.textContent?.trim() || "";
     const genericLinks = ["click here", "here", "read more", "learn more", "link", "more"];
     if (!text && !el.getAttribute("aria-label")) {
-      issues.push({ type: "error", label: "Link text", detail: "Empty link — no text or aria-label" });
+      issues.push({ type: "error", label: "Link text", detail: "Empty link - no text or aria-label" });
     } else if (genericLinks.includes(text.toLowerCase())) {
-      issues.push({ type: "warning", label: "Link text", detail: `"${text}" is not descriptive — use meaningful link text` });
+      issues.push({ type: "warning", label: "Link text", detail: `"${text}" is not descriptive - use meaningful link text` });
     }
   }
 
@@ -210,18 +210,18 @@ function auditElement(el: HTMLElement): A11yIssue[] {
   if (el.textContent?.trim()) {
     const fontSize = parseFloat(cs.fontSize);
     if (fontSize < 12) {
-      issues.push({ type: "warning", label: "Text size", detail: `${fontSize}px — may be hard to read, 12px minimum recommended` });
+      issues.push({ type: "warning", label: "Text size", detail: `${fontSize}px - may be hard to read, 12px minimum recommended` });
     }
   }
 
   // 12. Reduced motion check
   if (cs.animationName && cs.animationName !== "none") {
-    issues.push({ type: "warning", label: "Motion", detail: `Animation "${cs.animationName}" — ensure prefers-reduced-motion is respected` });
+    issues.push({ type: "warning", label: "Motion", detail: `Animation "${cs.animationName}" - ensure prefers-reduced-motion is respected` });
   }
   if (cs.transitionDuration && cs.transitionDuration !== "0s") {
     const dur = parseFloat(cs.transitionDuration) * 1000;
     if (dur > 500) {
-      issues.push({ type: "warning", label: "Motion", detail: `${dur}ms transition — animations over 500ms can cause issues` });
+      issues.push({ type: "warning", label: "Motion", detail: `${dur}ms transition - animations over 500ms can cause issues` });
     }
   }
 
@@ -233,7 +233,7 @@ function auditElement(el: HTMLElement): A11yIssue[] {
       const w = rect.width;
       const h = rect.height;
       if (w <= 20 && h <= 20) {
-        issues.push({ type: "warning", label: "Color only", detail: "Small colored element with no text — may rely on color alone to convey meaning" });
+        issues.push({ type: "warning", label: "Color only", detail: "Small colored element with no text - may rely on color alone to convey meaning" });
       }
     }
   }
@@ -243,10 +243,10 @@ function auditElement(el: HTMLElement): A11yIssue[] {
     const caption = el.querySelector("caption");
     const th = el.querySelector("th");
     if (!caption && !el.getAttribute("aria-label") && !el.getAttribute("aria-describedby")) {
-      issues.push({ type: "warning", label: "Table", detail: "Table without <caption> or aria-label — add a description" });
+      issues.push({ type: "warning", label: "Table", detail: "Table without <caption> or aria-label - add a description" });
     }
     if (!th) {
-      issues.push({ type: "warning", label: "Table", detail: "Table without <th> elements — use header cells for data tables" });
+      issues.push({ type: "warning", label: "Table", detail: "Table without <th> elements - use header cells for data tables" });
     } else {
       issues.push({ type: "pass", label: "Table", detail: "Table has header cells" });
     }
@@ -291,7 +291,7 @@ function auditPage(): A11yIssue[] {
   if (h1Count === 0) {
     issues.push({ type: "warning", label: "Headings", detail: "No <h1> found on page" });
   } else if (h1Count > 1) {
-    issues.push({ type: "warning", label: "Headings", detail: `${h1Count} <h1> elements — page should have exactly one` });
+    issues.push({ type: "warning", label: "Headings", detail: `${h1Count} <h1> elements - page should have exactly one` });
   }
   for (let i = 1; i < headings.length; i++) {
     const curr = parseInt(headings[i].tagName[1]);
@@ -382,14 +382,14 @@ function auditPage(): A11yIssue[] {
   const firstLink = body.querySelector("a");
   const hasSkipLink = firstLink && (firstLink.textContent?.toLowerCase().includes("skip") || firstLink.getAttribute("href")?.startsWith("#"));
   if (!hasSkipLink) {
-    issues.push({ type: "warning", label: "Skip link", detail: "No skip navigation link found — add one for keyboard users" });
+    issues.push({ type: "warning", label: "Skip link", detail: "No skip navigation link found - add one for keyboard users" });
   }
 
   // 10. Check for landmark roles
   const hasMain = body.querySelector("main") || body.querySelector("[role='main']");
   const hasNav = body.querySelector("nav") || body.querySelector("[role='navigation']");
   if (!hasMain) {
-    issues.push({ type: "warning", label: "Landmarks", detail: "No <main> landmark — screen readers use these to navigate" });
+    issues.push({ type: "warning", label: "Landmarks", detail: "No <main> landmark - screen readers use these to navigate" });
   }
   if (!hasNav) {
     issues.push({ type: "warning", label: "Landmarks", detail: "No <nav> landmark found" });

@@ -12,7 +12,6 @@ import { ChangeStore } from "./ChangeStore.js";
 /**
  * WebSocket bridge that connects the browser component to the MCP server.
  * Relays element selections, style changes, and designer messages.
- * changes, and designer messages.
  */
 export class WSBridge {
   private wss: WebSocketServer | null = null;
@@ -31,7 +30,7 @@ export class WSBridge {
 
       this.wss.on("error", (err) => {
         if ((err as NodeJS.ErrnoException).code === "EADDRINUSE") {
-          console.error(`[viztweak] Port ${WS_PORT} in use — another viztweak instance may be running`);
+          console.error(`[viztweak] Port ${WS_PORT} in use - another viztweak instance may be running`);
         }
         reject(err);
       });
@@ -83,7 +82,7 @@ export class WSBridge {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({
             type: "agent_status",
-            payload: { text: "Message received — waiting for agent to process.", type: "info" } satisfies AgentStatusPayload,
+            payload: { text: "Message received - waiting for agent to process.", type: "info" } satisfies AgentStatusPayload,
           }));
         }
         break;

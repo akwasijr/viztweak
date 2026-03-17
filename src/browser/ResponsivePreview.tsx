@@ -84,7 +84,7 @@ function applyViewportWidth(width: number) {
   let style = document.getElementById(WRAPPER_STYLE_ID);
 
   if (width === 0) {
-    // Full width — remove constraints
+    // Full width - remove constraints
     restoreFixedElements();
     if (wrapper) {
       while (wrapper.firstChild) {

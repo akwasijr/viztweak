@@ -152,7 +152,7 @@ export function Inspector({ active, onSelect, ignoreRefs }: InspectorProps) {
 
   return (
     <>
-      {/* Selection outline — NO fill tint, Figma-style */}
+      {/* Selection outline - NO fill tint, Figma-style */}
       <div
         style={{
           position: "fixed",
@@ -169,7 +169,7 @@ export function Inspector({ active, onSelect, ignoreRefs }: InspectorProps) {
         }}
       />
 
-      {/* Tag label — top-left blue pill */}
+      {/* Tag label - top-left blue pill */}
       <div
         style={{
           position: "fixed",
@@ -195,7 +195,7 @@ export function Inspector({ active, onSelect, ignoreRefs }: InspectorProps) {
         )}
       </div>
 
-      {/* Dimension label — bottom-right white pill */}
+      {/* Dimension label - bottom-right white pill */}
       <div
         style={{
           position: "fixed",
@@ -220,7 +220,7 @@ export function Inspector({ active, onSelect, ignoreRefs }: InspectorProps) {
         {w + "\u00D7" + h}
       </div>
 
-      {/* Spacing guides — padding (inner red lines) */}
+      {/* Spacing guides - padding (inner red lines) */}
       {spacing && (
         <>
           {/* Padding top */}

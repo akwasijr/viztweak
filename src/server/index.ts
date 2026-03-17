@@ -178,7 +178,7 @@ async function main() {
   try {
     await bridge.start();
   } catch {
-    console.error("[viztweak] Could not start WebSocket bridge — continuing with MCP only");
+    console.error("[viztweak] Could not start WebSocket bridge - continuing with MCP only");
   }
 
   const transport = new StdioServerTransport();

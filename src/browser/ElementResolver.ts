@@ -106,7 +106,7 @@ function getReactComponentName(el: HTMLElement): string | undefined {
       fiber = fiber.return;
     }
   } catch {
-    // Fiber walk failed — silently ignore
+    // Fiber walk failed - silently ignore
   }
 
   return undefined;

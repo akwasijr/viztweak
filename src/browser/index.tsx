@@ -101,7 +101,7 @@ function VizTweakInner() {
     }
     portalRef.current = container;
     return () => {
-      // Don't remove on unmount — may remount in dev mode
+      // Don't remove on unmount - may remount in dev mode
     };
   }, []);
 
@@ -201,7 +201,7 @@ function VizTweakInner() {
       setElementInfo(resolveElement(el));
       setInspecting(false);
       setPseudoState("default");
-      // Clear undo/redo — stacks are per-element, not global
+      // Clear undo/redo - stacks are per-element, not global
       setUndoStack([]);
       setRedoStack([]);
     },
@@ -406,7 +406,7 @@ function VizTweakInner() {
         ignoreRefs={[panelRef, toggleRef]}
       />
 
-      {/* Selection highlight — persistent blue outline on selected element */}
+      {/* Selection highlight - persistent blue outline on selected element */}
       {selectionRect && !inspecting && (
         <div
           data-viztweak=""
@@ -800,7 +800,7 @@ function VizTweakInner() {
                 ))}
               </div>
 
-              {/* Input row — pinned at bottom */}
+              {/* Input row - pinned at bottom */}
               <div
                 style={{
                   display: "flex",
@@ -934,7 +934,7 @@ function VizTweakInner() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Inspect toggle — always visible */}
+            {/* Inspect toggle - always visible */}
             <button
               onClick={() => setInspecting((prev) => !prev)}
               style={{
@@ -984,7 +984,7 @@ function VizTweakInner() {
 
                 <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
 
-                {/* Copy all changes — with change count badge + copied feedback */}
+                {/* Copy all changes - with change count badge + copied feedback */}
                 <div style={{ position: "relative", display: "inline-flex" }}>
                   <PillBtn icon={<IconCopy size={15} />} tooltip={copyFeedback ? "Copied!" : "Copy all changes"} onClick={handleCopyChanges} disabled={changeCount === 0} />
                   {changeCount > 0 && !copyFeedback && (

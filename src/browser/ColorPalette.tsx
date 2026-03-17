@@ -220,7 +220,7 @@ export function ColorPalette() {
                   <div
                     key={c.hex}
                     onClick={() => handleCopyHex(c.hex)}
-                    title={`${c.hex} — ${c.count} uses (${Array.from(c.usage).join(", ")})`}
+                    title={`${c.hex} - ${c.count} uses (${Array.from(c.usage).join(", ")})`}
                     style={{
                       width: "28px",
                       height: "28px",

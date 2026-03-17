@@ -65,7 +65,7 @@ function injectHoverRules(el: HTMLElement) {
           }
         }
       } catch {
-        // cross-origin stylesheet — skip
+        // cross-origin stylesheet - skip
       }
     }
   } catch {
