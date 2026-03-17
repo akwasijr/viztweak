@@ -2,20 +2,38 @@
 
 Visual UI inspector and style editor for Chrome and Edge. Select any element, tweak its styles, copy the changes to your AI coding agent.
 
-## Quick start
+## Build and package
 
 ```bash
 cd extension
 npm install
-npm run build
+npm run build      # Builds to dist/
+npm run package    # Builds + creates viztweak-extension.zip
 ```
 
-Then load in your browser:
-
+**Load locally** (for development):
 1. Open `chrome://extensions` (Chrome) or `edge://extensions` (Edge)
-2. Enable **Developer mode** (toggle in the top-right)
+2. Enable **Developer mode** (toggle in top-right)
 3. Click **Load unpacked**
 4. Select the `extension/dist` folder
+
+## Publish to stores
+
+### Chrome Web Store
+1. Run `npm run package` to create `viztweak-extension.zip`
+2. Go to the [Chrome Developer Dashboard](https://chrome.google.com/webstore/devconsole)
+3. Pay the one-time $5 registration fee (if you haven't)
+4. Click **New Item**, upload `viztweak-extension.zip`
+5. Fill in the listing: description, screenshots, category (Developer Tools)
+6. Submit for review (usually 1-3 business days)
+
+### Microsoft Edge Add-ons
+1. Same `viztweak-extension.zip` works for Edge (both use Manifest V3)
+2. Go to [Edge Partner Center](https://partner.microsoft.com/dashboard/microsoftedge/overview)
+3. Sign in with a Microsoft account (free)
+4. Click **Create new extension**, upload the zip
+5. Fill in the listing details
+6. Submit for review
 
 ## How to use
 

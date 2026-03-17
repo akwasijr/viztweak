@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
-    "clean": "rm -rf dist"
+    "package": "vite build && cd dist && zip -r ../viztweak-extension.zip . -x '*.DS_Store'",
+    "clean": "rm -rf dist viztweak-extension.zip"
   },
   "dependencies": {
     "react": "^19.0.0",
