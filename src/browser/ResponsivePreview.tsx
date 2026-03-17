@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
+import { THEME_MODE_ATTR } from "./theme.js";
 
 // ─── Inline device icons (thin stroke, 12px) ─────────────────
 
@@ -62,6 +63,7 @@ interface Breakpoint {
 interface ResponsivePreviewProps {
   active: boolean;
   onToggle: () => void;
+  themeMode?: string;
 }
 
 const BREAKPOINTS: Breakpoint[] = [
@@ -166,7 +168,7 @@ function restoreFixedElements() {
 
 // ─── Component ────────────────────────────────────────────────
 
-export function ResponsivePreview({ active, onToggle }: ResponsivePreviewProps) {
+export function ResponsivePreview({ active, onToggle, themeMode }: ResponsivePreviewProps) {
   const [currentWidth, setCurrentWidth] = useState(0);
   const [hovered, setHovered] = useState<number | null>(null);
 
@@ -195,6 +197,7 @@ export function ResponsivePreview({ active, onToggle }: ResponsivePreviewProps) 
   return (
     <div
       data-viztweak=""
+      {...(themeMode ? { [THEME_MODE_ATTR]: themeMode } : {})}
       style={{
         position: "fixed",
         top: "8px",

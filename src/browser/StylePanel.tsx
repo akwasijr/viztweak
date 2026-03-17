@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import type { ElementInfo } from "../shared/types.js";
 import { ALL_EDITABLE_PROPERTIES } from "../shared/types.js";
 import { DiffEngine } from "./DiffEngine.js";
@@ -111,6 +111,26 @@ const dividerStyle: React.CSSProperties = {
 
 // ─── Weight options for Select ────────────────────────────────
 
+const POPULAR_FONTS = [
+  "Inter", "Roboto", "Open Sans", "Lato", "Montserrat", "Poppins",
+  "Source Sans 3", "Nunito", "Raleway", "DM Sans", "Plus Jakarta Sans",
+  "Work Sans", "Rubik", "Manrope", "Space Grotesk", "Outfit",
+  "Geist", "IBM Plex Sans", "Fira Sans", "Barlow",
+  "Playfair Display", "Merriweather", "Lora", "Libre Baskerville",
+  "Source Serif 4", "Crimson Text", "EB Garamond",
+  "JetBrains Mono", "Fira Code", "Source Code Pro", "IBM Plex Mono",
+];
+
+function loadGoogleFont(family: string) {
+  const id = "vt-gfont-" + family.replace(/\s+/g, "-").toLowerCase();
+  if (document.getElementById(id)) return;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@300;400;500;600;700&display=swap`;
+  document.head.appendChild(link);
+}
+
 const WEIGHT_OPTIONS = [
   { value: "100", label: "Thin" },
   { value: "200", label: "Extra Light" },
@@ -170,6 +190,10 @@ export function StylePanel({
   const [showStroke, setShowStroke] = useState(() => hasBorder(cs));
 
   // Typography
+  const [fontFamily, setFontFamily] = useState(() => cs.fontFamily.replace(/['"]/g, "").split(",")[0].trim());
+  const [fontSearch, setFontSearch] = useState("");
+  const [showFontPicker, setShowFontPicker] = useState(false);
+  const fontPickerRef = useRef<HTMLDivElement>(null);
   const [fontWeight, setFontWeight] = useState(() => cs.fontWeight || "400");
   const [fontSize, setFontSize] = useState(() => px(cs.fontSize));
   const [lineHeight, setLineHeight] = useState(() => px(cs.lineHeight));
@@ -270,6 +294,18 @@ export function StylePanel({
       payload: { element: elementInfo, computedStyles: styles },
     });
   }, [element, elementInfo, wsClient]);
+
+  useEffect(() => {
+    if (!showFontPicker) return;
+    const close = (e: MouseEvent) => {
+      if (fontPickerRef.current && !fontPickerRef.current.contains(e.target as Node)) {
+        setShowFontPicker(false);
+        setFontSearch("");
+      }
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [showFontPicker]);
 
   // Style helpers
   const sectionLabelStyle: React.CSSProperties = {
@@ -1081,6 +1117,86 @@ export function StylePanel({
           />
           {expandedSections.typography && (
             <div style={sectionBodyStyle}>
+              {/* Font Family Picker */}
+              <div ref={fontPickerRef} style={{ position: "relative" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                  <span style={{ fontSize: "var(--vt-font-size-label)", color: "var(--vt-text-secondary)", whiteSpace: "nowrap", width: "20px" }}>Aa</span>
+                  <input
+                    type="text"
+                    value={showFontPicker ? fontSearch : fontFamily}
+                    onChange={(e) => {
+                      setFontSearch(e.target.value);
+                      if (!showFontPicker) setShowFontPicker(true);
+                    }}
+                    onFocus={() => setShowFontPicker(true)}
+                    placeholder="Search fonts..."
+                    style={{
+                      flex: 1,
+                      height: "var(--vt-input-height)",
+                      fontSize: "var(--vt-font-size-value)",
+                      fontFamily: `"${fontFamily}", var(--vt-font)`,
+                      color: "var(--vt-text-primary)",
+                      background: "var(--vt-input-bg)",
+                      border: "1px solid var(--vt-input-border)",
+                      borderRadius: "var(--vt-input-radius)",
+                      outline: "none",
+                      padding: "0 6px",
+                      minWidth: 0,
+                    }}
+                  />
+                </div>
+                {showFontPicker && (
+                  <div
+                    data-viztweak=""
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      left: "20px",
+                      right: 0,
+                      marginTop: "2px",
+                      maxHeight: "180px",
+                      overflowY: "auto",
+                      background: "var(--vt-panel-bg)",
+                      border: "1px solid var(--vt-border)",
+                      borderRadius: "6px",
+                      boxShadow: "var(--vt-shadow-md)",
+                      zIndex: 100,
+                      padding: "2px",
+                    }}
+                  >
+                    {POPULAR_FONTS
+                      .filter((f) => !fontSearch || f.toLowerCase().includes(fontSearch.toLowerCase()))
+                      .map((font) => (
+                        <button
+                          key={font}
+                          onClick={() => {
+                            loadGoogleFont(font);
+                            setFontFamily(font);
+                            setShowFontPicker(false);
+                            setFontSearch("");
+                            apply("font-family", `"${font}", sans-serif`);
+                          }}
+                          style={{
+                            display: "block",
+                            width: "100%",
+                            textAlign: "left",
+                            padding: "4px 8px",
+                            fontSize: "11px",
+                            fontFamily: `"${font}", sans-serif`,
+                            color: font === fontFamily ? "var(--vt-accent)" : "var(--vt-text-primary)",
+                            fontWeight: font === fontFamily ? 600 : 400,
+                            background: font === fontFamily ? "var(--vt-accent-bg)" : "transparent",
+                            border: "none",
+                            borderRadius: "var(--vt-input-radius)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {font}
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
               <SelectInput
                 label="Wt"
                 value={fontWeight}

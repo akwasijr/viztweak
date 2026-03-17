@@ -185,6 +185,82 @@ function auditElement(el: HTMLElement): A11yIssue[] {
     }
   }
 
+  // 9. Language attribute
+  if (tag === "html" && !el.getAttribute("lang")) {
+    issues.push({ type: "error", label: "Language", detail: "Missing lang attribute on <html> — screen readers need this" });
+  } else if (tag === "html") {
+    issues.push({ type: "pass", label: "Language", detail: `lang="${el.getAttribute("lang")}"` });
+  }
+
+  // 10. Link text quality
+  if (tag === "a") {
+    const text = el.textContent?.trim() || "";
+    const genericLinks = ["click here", "here", "read more", "learn more", "link", "more"];
+    if (!text && !el.getAttribute("aria-label")) {
+      issues.push({ type: "error", label: "Link text", detail: "Empty link — no text or aria-label" });
+    } else if (genericLinks.includes(text.toLowerCase())) {
+      issues.push({ type: "warning", label: "Link text", detail: `"${text}" is not descriptive — use meaningful link text` });
+    }
+  }
+
+  // 11. Text size readability
+  if (el.textContent?.trim()) {
+    const fontSize = parseFloat(cs.fontSize);
+    if (fontSize < 12) {
+      issues.push({ type: "warning", label: "Text size", detail: `${fontSize}px — may be hard to read, 12px minimum recommended` });
+    }
+  }
+
+  // 12. Reduced motion check
+  if (cs.animationName && cs.animationName !== "none") {
+    issues.push({ type: "warning", label: "Motion", detail: `Animation "${cs.animationName}" — ensure prefers-reduced-motion is respected` });
+  }
+  if (cs.transitionDuration && cs.transitionDuration !== "0s") {
+    const dur = parseFloat(cs.transitionDuration) * 1000;
+    if (dur > 500) {
+      issues.push({ type: "warning", label: "Motion", detail: `${dur}ms transition — animations over 500ms can cause issues` });
+    }
+  }
+
+  // 13. Color-only indicators
+  if (tag === "span" || tag === "div") {
+    const bgColor = parseColor(cs.backgroundColor);
+    const textContent = el.textContent?.trim() || "";
+    if (bgColor && !textContent && !el.querySelector("svg") && !el.getAttribute("aria-label")) {
+      const w = rect.width;
+      const h = rect.height;
+      if (w <= 20 && h <= 20) {
+        issues.push({ type: "warning", label: "Color only", detail: "Small colored element with no text — may rely on color alone to convey meaning" });
+      }
+    }
+  }
+
+  // 14. Table accessibility
+  if (tag === "table") {
+    const caption = el.querySelector("caption");
+    const th = el.querySelector("th");
+    if (!caption && !el.getAttribute("aria-label") && !el.getAttribute("aria-describedby")) {
+      issues.push({ type: "warning", label: "Table", detail: "Table without <caption> or aria-label — add a description" });
+    }
+    if (!th) {
+      issues.push({ type: "warning", label: "Table", detail: "Table without <th> elements — use header cells for data tables" });
+    } else {
+      issues.push({ type: "pass", label: "Table", detail: "Table has header cells" });
+    }
+  }
+
+  // 15. Autocomplete for common input types
+  if (tag === "input") {
+    const type = el.getAttribute("type") || "text";
+    const name = (el.getAttribute("name") || "").toLowerCase();
+    const autocomplete = el.getAttribute("autocomplete");
+    const needsAutocomplete = ["email", "tel", "password"].includes(type) ||
+      ["name", "email", "phone", "address", "city", "zip", "postal"].some((k) => name.includes(k));
+    if (needsAutocomplete && !autocomplete) {
+      issues.push({ type: "warning", label: "Autocomplete", detail: `Input "${name || type}" should have autocomplete attribute for accessibility` });
+    }
+  }
+
   return issues;
 }
 

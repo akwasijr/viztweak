@@ -419,7 +419,7 @@ function VizTweakInner() {
       <GridFlexDebugger active={showLayoutDebugger} />
 
       {/* Responsive preview bar */}
-      <ResponsivePreview active={showResponsive} onToggle={() => setShowResponsive(false)} />
+      <ResponsivePreview active={showResponsive} onToggle={() => setShowResponsive(false)} themeMode={themeMode} />
 
       {/* Floating sidebar panel */}
       {panelOpen && (
