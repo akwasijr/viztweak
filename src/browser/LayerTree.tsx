@@ -13,6 +13,10 @@ import {
   IconComponent,
   IconEye,
   IconEyeOff,
+  IconSection,
+  IconGroup,
+  IconRectangle,
+  IconText,
 } from "./icons.js";
 
 // ─── Types ────────────────────────────────────────────────────
@@ -52,7 +56,7 @@ function getElementIcon(el: HTMLElement): React.ReactNode {
   if (tag === "BUTTON") return <IconButton size={12} />;
   if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return <IconInput size={12} />;
   if (tag === "A") return <IconLink size={12} />;
-  if (TEXT_TAGS.has(tag)) return <IconType size={12} />;
+  if (TEXT_TAGS.has(tag)) return <IconText size={12} />;
   if (LIST_TAGS.has(tag)) return <IconList size={12} />;
 
   // Check for React component
@@ -64,11 +68,18 @@ function getElementIcon(el: HTMLElement): React.ReactNode {
     }
   }
 
-  if (tag === "SECTION" || tag === "ARTICLE" || tag === "MAIN" || tag === "ASIDE" || tag === "NAV" || tag === "HEADER" || tag === "FOOTER") {
+  if (tag === "SECTION") return <IconSection size={12} />;
+  if (tag === "ARTICLE" || tag === "MAIN" || tag === "ASIDE" || tag === "NAV" || tag === "HEADER" || tag === "FOOTER") {
     return <IconFrame size={12} />;
   }
 
-  return <IconContainer size={12} />;
+  // Flex/grid containers get group icon
+  const display = window.getComputedStyle(el).display;
+  if (display === "flex" || display === "inline-flex" || display === "grid" || display === "inline-grid") {
+    return <IconGroup size={12} />;
+  }
+
+  return <IconRectangle size={12} />;
 }
 
 function getElementName(el: HTMLElement): string {

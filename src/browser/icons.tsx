@@ -709,3 +709,151 @@ export function IconChat({ size, className }: IconProps) {
     </Svg>
   );
 }
+
+// ─── Theme ─────────────────────────────────────────────────
+
+export function IconSun({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <circle cx="8" cy="8" r="3" fill="none" />
+      <line x1="8" y1="1.5" x2="8" y2="3" />
+      <line x1="8" y1="13" x2="8" y2="14.5" />
+      <line x1="1.5" y1="8" x2="3" y2="8" />
+      <line x1="13" y1="8" x2="14.5" y2="8" />
+      <line x1="3.4" y1="3.4" x2="4.5" y2="4.5" />
+      <line x1="11.5" y1="11.5" x2="12.6" y2="12.6" />
+      <line x1="3.4" y1="12.6" x2="4.5" y2="11.5" />
+      <line x1="11.5" y1="4.5" x2="12.6" y2="3.4" />
+    </Svg>
+  );
+}
+
+export function IconMoon({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <path d="M12.4 10.3A5.5 5.5 0 0 1 5.7 3.6 5.5 5.5 0 1 0 12.4 10.3z" fill="none" />
+    </Svg>
+  );
+}
+
+// ─── Overlays / Debug ──────────────────────────────────────
+
+export function IconSpacingOverlay({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="4" y="4" width="8" height="8" fill="none" />
+      <line x1="1" y1="4" x2="4" y2="4" strokeDasharray="1.5 1" />
+      <line x1="1" y1="12" x2="4" y2="12" strokeDasharray="1.5 1" />
+      <line x1="12" y1="4" x2="15" y2="4" strokeDasharray="1.5 1" />
+      <line x1="12" y1="12" x2="15" y2="12" strokeDasharray="1.5 1" />
+      <line x1="4" y1="1" x2="4" y2="4" strokeDasharray="1.5 1" />
+      <line x1="12" y1="1" x2="12" y2="4" strokeDasharray="1.5 1" />
+      <line x1="4" y1="12" x2="4" y2="15" strokeDasharray="1.5 1" />
+      <line x1="12" y1="12" x2="12" y2="15" strokeDasharray="1.5 1" />
+    </Svg>
+  );
+}
+
+export function IconGridOverlay({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <line x1="5.5" y1="1" x2="5.5" y2="15" />
+      <line x1="10.5" y1="1" x2="10.5" y2="15" />
+      <line x1="1" y1="5.5" x2="15" y2="5.5" />
+      <line x1="1" y1="10.5" x2="15" y2="10.5" />
+    </Svg>
+  );
+}
+
+// ─── Layer types ────────────────────────────────────────────
+
+export function IconRectangle({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="2" y="3" width="12" height="10" rx="1" fill="none" />
+    </Svg>
+  );
+}
+
+export function IconEllipse({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <ellipse cx="8" cy="8" rx="6" ry="5" fill="none" />
+    </Svg>
+  );
+}
+
+export function IconSection({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="1.5" y="1.5" width="13" height="13" rx="2" fill="none" strokeDasharray="2.5 1.5" />
+    </Svg>
+  );
+}
+
+export function IconText({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <line x1="4" y1="3" x2="12" y2="3" />
+      <line x1="8" y1="3" x2="8" y2="13" />
+      <line x1="5.5" y1="13" x2="10.5" y2="13" />
+    </Svg>
+  );
+}
+
+export function IconLock({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="4" y="7" width="8" height="6" rx="1" fill="none" />
+      <path d="M5.5 7V5.5a2.5 2.5 0 0 1 5 0V7" fill="none" />
+    </Svg>
+  );
+}
+
+export function IconUnlock({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="4" y="7" width="8" height="6" rx="1" fill="none" />
+      <path d="M5.5 7V5.5a2.5 2.5 0 0 1 5 0" fill="none" />
+    </Svg>
+  );
+}
+
+export function IconHidden({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <line x1="2" y1="2" x2="14" y2="14" />
+      <path d="M3 8s2.5-4 5-4 5 4 5 4-2.5 4-5 4-5-4-5-4z" fill="none" />
+    </Svg>
+  );
+}
+
+export function IconGroup({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="1" y="1" width="5" height="5" fill="none" />
+      <rect x="10" y="1" width="5" height="5" fill="none" />
+      <rect x="1" y="10" width="5" height="5" fill="none" />
+      <rect x="10" y="10" width="5" height="5" fill="none" />
+    </Svg>
+  );
+}
+
+export function IconStar({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <polygon points="8,1.5 9.8,6 14.5,6.3 10.9,9.3 12,14 8,11.5 4,14 5.1,9.3 1.5,6.3 6.2,6" fill="none" />
+    </Svg>
+  );
+}
+
+export function IconVector({ size, className }: IconProps) {
+  return (
+    <Svg size={size} className={className}>
+      <path d="M3 12L8 3l5 9H3z" fill="none" />
+      <circle cx="8" cy="3" r="1.5" fill="none" />
+      <circle cx="3" cy="12" r="1.5" fill="none" />
+      <circle cx="13" cy="12" r="1.5" fill="none" />
+    </Svg>
+  );
+}

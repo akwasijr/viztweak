@@ -14,7 +14,7 @@ import { WSClient } from "./WSClient.js";
 import { resolveElement } from "./ElementResolver.js";
 import { ALL_EDITABLE_PROPERTIES } from "../shared/types.js";
 import type { ElementInfo, AgentStatusPayload } from "../shared/types.js";
-import { injectTheme, THEME_ATTR } from "./theme.js";
+import { injectTheme, THEME_ATTR, THEME_MODE_ATTR, getStoredTheme, setStoredTheme, type ThemeMode } from "./theme.js";
 import { SpacingOverlay } from "./SpacingOverlay.js";
 import { AccessibilityChecker } from "./AccessibilityChecker.js";
 import { ResponsivePreview } from "./ResponsivePreview.js";
@@ -24,7 +24,7 @@ import { TokenExtractor } from "./TokenExtractor.js";
 import { ColorPalette } from "./ColorPalette.js";
 import { GridFlexDebugger } from "./GridFlexDebugger.js";
 import { DiffReporter } from "./DiffReporter.js";
-import { IconInspect, IconClose, IconSend, IconDesign, IconLayers, IconBoxModel, IconResponsive, IconUndo, IconRedo, IconReset, IconCopy, IconPanelLeft, IconPanelRight, IconLayoutGrid, IconCode, IconChat, IconPalette, IconSpacing, IconType, IconState, IconAccessibility, IconCornerRadius, IconFrame } from "./icons.js";
+import { IconInspect, IconClose, IconSend, IconDesign, IconLayers, IconBoxModel, IconResponsive, IconUndo, IconRedo, IconReset, IconCopy, IconPanelLeft, IconPanelRight, IconLayoutGrid, IconCode, IconChat, IconPalette, IconSpacing, IconType, IconState, IconAccessibility, IconCornerRadius, IconFrame, IconSun, IconMoon, IconSpacingOverlay, IconGridOverlay } from "./icons.js";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -79,6 +79,8 @@ function VizTweakInner() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [colorBlindMode, setColorBlindMode] = useState<string | null>(null);
+  const [themeMode, setThemeMode] = useState<ThemeMode>(getStoredTheme);
+  const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLDivElement>(null);
@@ -90,6 +92,32 @@ function VizTweakInner() {
   useEffect(() => {
     injectTheme();
   }, []);
+
+  // Toggle theme on all viztweak elements
+  const handleToggleTheme = useCallback(() => {
+    setThemeMode((prev) => {
+      const next: ThemeMode = prev === "dark" ? "light" : "dark";
+      setStoredTheme(next);
+      document.querySelectorAll(`[${THEME_ATTR}]`).forEach((el) => {
+        (el as HTMLElement).setAttribute(THEME_MODE_ATTR, next);
+      });
+      return next;
+    });
+  }, []);
+
+  // Track selected element bounding rect for on-screen highlight
+  useEffect(() => {
+    if (!selectedElement) {
+      setSelectionRect(null);
+      return;
+    }
+    const update = () => setSelectionRect(selectedElement.getBoundingClientRect());
+    update();
+    const raf = { id: 0 };
+    const loop = () => { update(); raf.id = requestAnimationFrame(loop); };
+    raf.id = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf.id);
+  }, [selectedElement]);
 
   // Connect WebSocket
   useEffect(() => {
@@ -332,6 +360,25 @@ function VizTweakInner() {
         ignoreRefs={[panelRef, toggleRef]}
       />
 
+      {/* Selection highlight — persistent blue outline on selected element */}
+      {selectionRect && !inspecting && (
+        <div
+          data-viztweak=""
+          style={{
+            position: "fixed",
+            top: selectionRect.top,
+            left: selectionRect.left,
+            width: selectionRect.width,
+            height: selectionRect.height,
+            border: "1.5px solid #0C8CE9",
+            borderRadius: 0,
+            pointerEvents: "none",
+            zIndex: 2147483644,
+            boxShadow: "0 0 0 1px rgba(12,140,233,0.15)",
+          }}
+        />
+      )}
+
       {/* Spacing overlay */}
       <SpacingOverlay element={selectedElement} visible={showSpacingOverlay} />
 
@@ -346,6 +393,7 @@ function VizTweakInner() {
         <div
           ref={panelRef}
           data-viztweak=""
+          {...{ [THEME_MODE_ATTR]: themeMode }}
           style={panelPositionStyle}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
@@ -389,7 +437,7 @@ function VizTweakInner() {
                 </span>
               )}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
               <span
                 style={{
                   display: "flex",
@@ -409,6 +457,27 @@ function VizTweakInner() {
                 }} />
                 {wsConnected ? "Agent" : "Offline"}
               </span>
+              <button
+                onClick={handleToggleTheme}
+                title={themeMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "24px",
+                  height: "24px",
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  color: "var(--vt-text-secondary)",
+                  borderRadius: "var(--vt-input-radius)",
+                  padding: 0,
+                  flexShrink: 0,
+                }}
+                aria-label="Toggle theme"
+              >
+                {themeMode === "dark" ? <IconSun size={13} /> : <IconMoon size={13} />}
+              </button>
               <button
                 onClick={handleClose}
                 style={{
@@ -843,6 +912,7 @@ function VizTweakInner() {
           <div
             ref={toggleRef}
             data-viztweak=""
+            {...{ [THEME_MODE_ATTR]: themeMode }}
             style={{
               position: "fixed",
               bottom: "16px",
@@ -911,8 +981,8 @@ function VizTweakInner() {
 
                 <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
 
-                <PillBtn icon={<IconBoxModel size={15} />} tooltip="Spacing overlay" onClick={() => setShowSpacingOverlay((p) => !p)} active={showSpacingOverlay} />
-                <PillBtn icon={<IconLayoutGrid size={15} />} tooltip="Flex/Grid debugger" onClick={() => setShowLayoutDebugger((p) => !p)} active={showLayoutDebugger} />
+                <PillBtn icon={<IconSpacingOverlay size={15} />} tooltip="Spacing overlay" onClick={() => setShowSpacingOverlay((p) => !p)} active={showSpacingOverlay} />
+                <PillBtn icon={<IconGridOverlay size={15} />} tooltip="Grid debugger" onClick={() => setShowLayoutDebugger((p) => !p)} active={showLayoutDebugger} />
                 <PillBtn icon={<IconResponsive size={15} />} tooltip="Responsive preview" onClick={() => setShowResponsive((p) => !p)} active={showResponsive} />
 
                 <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
@@ -921,6 +991,11 @@ function VizTweakInner() {
                   icon={panelSide === "right" ? <IconPanelLeft size={15} /> : <IconPanelRight size={15} />}
                   tooltip={`Move panel ${panelSide === "right" ? "left" : "right"}`}
                   onClick={handleToggleSide}
+                />
+                <PillBtn
+                  icon={themeMode === "dark" ? <IconSun size={14} /> : <IconMoon size={14} />}
+                  tooltip={themeMode === "dark" ? "Light mode" : "Dark mode"}
+                  onClick={handleToggleTheme}
                 />
                 <PillBtn
                   icon={<span style={{ fontSize: "14px", fontWeight: 700, lineHeight: 1 }}>?</span>}
