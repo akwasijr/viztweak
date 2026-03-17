@@ -24,7 +24,7 @@ import { TokenExtractor } from "./TokenExtractor.js";
 import { ColorPalette } from "./ColorPalette.js";
 import { GridFlexDebugger } from "./GridFlexDebugger.js";
 import { DiffReporter } from "./DiffReporter.js";
-import { IconInspect, IconClose, IconSend, IconDesign, IconLayers, IconBoxModel, IconResponsive, IconUndo, IconRedo, IconReset, IconCopy, IconPanelLeft, IconPanelRight, IconLayoutGrid, IconCode, IconChat } from "./icons.js";
+import { IconInspect, IconClose, IconSend, IconDesign, IconLayers, IconBoxModel, IconResponsive, IconUndo, IconRedo, IconReset, IconCopy, IconPanelLeft, IconPanelRight, IconLayoutGrid, IconCode, IconChat, IconPalette, IconSpacing, IconType, IconState, IconAccessibility, IconCornerRadius } from "./icons.js";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -473,12 +473,13 @@ function VizTweakInner() {
               <CSSVarInspector element={selectedElement} />
             </div>
           ) : activeTab === "chat" ? (
-            <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
+            <div style={{ display: "flex", flexDirection: "column", flex: "1 1 0%", minHeight: 0, height: 0, overflow: "hidden" }}>
               {/* Messages area */}
               <div
                 ref={chatScrollRef}
                 style={{
-                  flex: 1,
+                  flex: "1 1 0%",
+                  minHeight: 0,
                   overflowY: "auto",
                   padding: "8px 10px",
                   display: "flex",
@@ -492,57 +493,17 @@ function VizTweakInner() {
                   const elClass = selectedElement?.className
                     ? `.${String(selectedElement.className).split(" ").filter(Boolean)[0]}`
                     : "";
-                  const elLabel = elTag ? `<${elTag}${elId || elClass}>` : "element";
+                  const elLabel = elTag ? `${elTag}${elId || elClass}` : "this element";
 
-                  type PromptGroup = { label: string; prompts: { icon: string; text: string }[] };
-                  const groups: PromptGroup[] = [
-                    {
-                      label: "UI Design",
-                      prompts: [
-                        { icon: "🎨", text: `Change the color scheme of this ${elLabel}` },
-                        { icon: "📏", text: `Increase the whitespace and breathing room around ${elLabel}` },
-                        { icon: "🔠", text: `Improve the typography hierarchy in this section` },
-                        { icon: "🖼️", text: `Add a subtle border and shadow to ${elLabel} to create depth` },
-                        { icon: "↔️", text: `Make ${elLabel} the same width/height as its siblings` },
-                      ],
-                    },
-                    {
-                      label: "Layout & Responsive",
-                      prompts: [
-                        { icon: "📐", text: `Fix the spacing and alignment of ${elLabel}` },
-                        { icon: "📱", text: "Make this section responsive for mobile" },
-                        { icon: "🏗️", text: `Convert ${elLabel} to use CSS Grid or Flexbox` },
-                        { icon: "📊", text: "Align all cards in this row to equal heights" },
-                      ],
-                    },
-                    {
-                      label: "Visual Polish",
-                      prompts: [
-                        { icon: "✨", text: `Add hover and focus states to ${elLabel}` },
-                        { icon: "🌀", text: `Add a smooth transition/animation to ${elLabel}` },
-                        { icon: "📎", text: `Round the corners and soften the edges of ${elLabel}` },
-                        { icon: "🌗", text: "Add dark mode support to this section" },
-                        { icon: "🪄", text: `Make ${elLabel} look more modern and polished` },
-                      ],
-                    },
-                    {
-                      label: "Accessibility",
-                      prompts: [
-                        { icon: "♿", text: `Check and fix accessibility issues on ${elLabel}` },
-                        { icon: "🔤", text: "Improve text contrast and readability here" },
-                        { icon: "⌨️", text: `Add proper keyboard navigation to ${elLabel}` },
-                        { icon: "🏷️", text: `Add missing ARIA labels and roles to ${elLabel}` },
-                      ],
-                    },
-                    {
-                      label: "Code & Structure",
-                      prompts: [
-                        { icon: "🔄", text: `Refactor ${elLabel} into a reusable component` },
-                        { icon: "🗑️", text: `Remove this ${elLabel} and clean up the layout` },
-                        { icon: "⚡", text: "Optimize the CSS for this component" },
-                        { icon: "🐛", text: "Find and fix visual bugs on this page" },
-                      ],
-                    },
+                  const prompts: { icon: React.ReactNode; text: string }[] = [
+                    { icon: <IconPalette size={14} />, text: `Update the colors on ${elLabel}` },
+                    { icon: <IconSpacing size={14} />, text: `Fix spacing and alignment of ${elLabel}` },
+                    { icon: <IconType size={14} />, text: "Improve the typography in this section" },
+                    { icon: <IconResponsive size={14} />, text: "Make this section work on mobile" },
+                    { icon: <IconState size={14} />, text: `Add hover and focus states to ${elLabel}` },
+                    { icon: <IconAccessibility size={14} />, text: `Fix accessibility issues on ${elLabel}` },
+                    { icon: <IconCornerRadius size={14} />, text: `Soften the edges and round corners of ${elLabel}` },
+                    { icon: <IconCode size={14} />, text: "Find and fix visual bugs on this page" },
                   ];
 
                   const handlePromptClick = (text: string) => {
@@ -563,69 +524,51 @@ function VizTweakInner() {
                     <div style={{
                       display: "flex",
                       flexDirection: "column",
-                      flex: 1,
-                      gap: "12px",
-                      padding: "12px 4px",
+                      gap: "6px",
+                      padding: "12px 6px 8px",
                     }}>
-                      <div style={{ textAlign: "center", padding: "0 8px" }}>
-                        <IconChat size={20} />
-                        <p style={{
-                          fontSize: "11px",
-                          color: "var(--vt-text-disabled)",
-                          lineHeight: "15px",
-                          marginTop: "4px",
-                        }}>
-                          Tell the AI agent what to change.{selectedElement
-                            ? <> Selected: <strong style={{ color: "var(--vt-text-secondary)" }}>{elLabel}</strong></>
-                            : " Select an element first for context-aware prompts."}
-                        </p>
-                      </div>
-                      {groups.map((group) => (
-                        <div key={group.label} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <span style={{
-                            fontSize: "9px",
-                            fontWeight: 600,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.5px",
-                            color: "var(--vt-text-disabled)",
-                            padding: "0 6px",
-                          }}>
-                            {group.label}
-                          </span>
-                          {group.prompts.map((p) => (
-                            <button
-                              key={p.text}
-                              onClick={() => handlePromptClick(p.text)}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                                padding: "6px 8px",
-                                fontSize: "11px",
-                                lineHeight: "14px",
-                                color: "var(--vt-text-secondary)",
-                                background: "var(--vt-hover)",
-                                border: "1px solid var(--vt-border)",
-                                borderRadius: "6px",
-                                cursor: "pointer",
-                                textAlign: "left",
-                                transition: "background 0.15s ease, border-color 0.15s ease",
-                                width: "100%",
-                              }}
-                              onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLElement).style.background = "var(--vt-surface)";
-                                (e.currentTarget as HTMLElement).style.borderColor = "var(--vt-accent)";
-                              }}
-                              onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLElement).style.background = "var(--vt-hover)";
-                                (e.currentTarget as HTMLElement).style.borderColor = "var(--vt-border)";
-                              }}
-                            >
-                              <span style={{ fontSize: "13px", flexShrink: 0 }}>{p.icon}</span>
-                              <span>{p.text}</span>
-                            </button>
-                          ))}
-                        </div>
+                      <p style={{
+                        fontSize: "11px",
+                        color: "var(--vt-text-disabled)",
+                        lineHeight: "15px",
+                        padding: "0 4px 4px",
+                      }}>
+                        Ask the agent to make changes{selectedElement
+                          ? <> to <span style={{ color: "var(--vt-text-secondary)", fontWeight: 500 }}>{elLabel}</span></>
+                          : ""}
+                      </p>
+                      {prompts.map((p, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handlePromptClick(p.text)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            padding: "7px 8px",
+                            fontSize: "11px",
+                            lineHeight: "14px",
+                            color: "var(--vt-text-secondary)",
+                            background: "transparent",
+                            border: "1px solid var(--vt-border)",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            transition: "background 0.15s ease, border-color 0.15s ease",
+                            width: "100%",
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLElement).style.background = "var(--vt-hover)";
+                            (e.currentTarget as HTMLElement).style.borderColor = "var(--vt-accent)";
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLElement).style.background = "transparent";
+                            (e.currentTarget as HTMLElement).style.borderColor = "var(--vt-border)";
+                          }}
+                        >
+                          <span style={{ flexShrink: 0, color: "var(--vt-text-disabled)", display: "flex" }}>{p.icon}</span>
+                          <span>{p.text}</span>
+                        </button>
                       ))}
                     </div>
                   );
