@@ -30,13 +30,13 @@ const FORCE_CLASSES: Record<PseudoState, string> = {
 
 // CSS that simulates pseudo-states via classes
 const stateSimulationCSS = `
-.vt-force-hover { }
 .vt-force-focus { outline: 2px solid var(--vt-accent, #0C8CE9) !important; outline-offset: 2px; }
 .vt-force-active { filter: brightness(0.95); }
 .vt-force-disabled { opacity: 0.5 !important; pointer-events: none !important; cursor: not-allowed !important; }
 `;
 
 let stateStyleInjected = false;
+let hoverStyleEl: HTMLStyleElement | null = null;
 
 function injectStateStyles() {
   if (stateStyleInjected) return;
@@ -46,6 +46,44 @@ function injectStateStyles() {
   style.textContent = stateSimulationCSS;
   document.head.appendChild(style);
   stateStyleInjected = true;
+}
+
+/**
+ * Simulate :hover by duplicating all :hover rules to target a .vt-force-hover class.
+ * This ensures descendant :hover styles also apply correctly.
+ */
+function injectHoverRules(el: HTMLElement) {
+  removeHoverRules();
+  const rules: string[] = [];
+  try {
+    for (const sheet of Array.from(document.styleSheets)) {
+      try {
+        for (const rule of Array.from(sheet.cssRules)) {
+          if (rule instanceof CSSStyleRule && rule.selectorText.includes(":hover")) {
+            const newSelector = rule.selectorText.replace(/:hover/g, ".vt-force-hover");
+            rules.push(`${newSelector} { ${rule.style.cssText} }`);
+          }
+        }
+      } catch {
+        // cross-origin stylesheet — skip
+      }
+    }
+  } catch {
+    // ignore
+  }
+  if (rules.length > 0) {
+    hoverStyleEl = document.createElement("style");
+    hoverStyleEl.id = "viztweak-hover-simulation";
+    hoverStyleEl.textContent = rules.join("\n");
+    document.head.appendChild(hoverStyleEl);
+  }
+}
+
+function removeHoverRules() {
+  if (hoverStyleEl) {
+    hoverStyleEl.remove();
+    hoverStyleEl = null;
+  }
 }
 
 // ─── Component ────────────────────────────────────────────────
@@ -62,12 +100,12 @@ export function StateSelector({ value, onChange, element }: StateSelectorProps) 
       for (const cls of Object.values(FORCE_CLASSES)) {
         if (cls) element.classList.remove(cls);
       }
+      removeHoverRules();
 
-      // Apply hover-specific: trigger CSS :hover rules by copying computed hover styles
+      // Apply hover-specific: duplicate :hover rules targeting .vt-force-hover
       if (state === "hover") {
+        injectHoverRules(element);
         element.classList.add(FORCE_CLASSES.hover);
-        // Dispatch a mouseenter event to trigger CSS hover
-        element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
       } else if (state === "focus") {
         element.classList.add(FORCE_CLASSES.focus);
         element.focus();

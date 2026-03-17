@@ -77,6 +77,8 @@ function VizTweakInner() {
   const [showResponsive, setShowResponsive] = useState(false);
   const [showLayoutDebugger, setShowLayoutDebugger] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [colorBlindMode, setColorBlindMode] = useState<string | null>(null);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLDivElement>(null);
@@ -280,6 +282,13 @@ function VizTweakInner() {
       }
       if (e.key === "3" && !e.ctrlKey && !e.metaKey && selectedElement) {
         setActiveTab("inspect");
+      }
+      if (e.key === "4" && !e.ctrlKey && !e.metaKey && selectedElement) {
+        setActiveTab("chat");
+      }
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        e.preventDefault();
+        setShowShortcuts((prev) => !prev);
       }
     };
     document.addEventListener("keydown", handler);
@@ -618,6 +627,141 @@ function VizTweakInner() {
         </div>
       )}
 
+      {/* ─── Color Blind Simulation Overlay ─── */}
+      {colorBlindMode && (
+        <div
+          data-viztweak=""
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 2147483640,
+            pointerEvents: "none",
+            filter: colorBlindMode === "deuteranopia"
+              ? "url(#vt-deuteranopia)"
+              : colorBlindMode === "protanopia"
+                ? "url(#vt-protanopia)"
+                : colorBlindMode === "tritanopia"
+                  ? "url(#vt-tritanopia)"
+                  : "saturate(0)",
+            mixBlendMode: "color",
+          }}
+        />
+      )}
+      {colorBlindMode && (
+        <svg data-viztweak="" style={{ position: "absolute", width: 0, height: 0 }}>
+          <defs>
+            <filter id="vt-deuteranopia">
+              <feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0" />
+            </filter>
+            <filter id="vt-protanopia">
+              <feColorMatrix type="matrix" values="0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0" />
+            </filter>
+            <filter id="vt-tritanopia">
+              <feColorMatrix type="matrix" values="0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0" />
+            </filter>
+          </defs>
+        </svg>
+      )}
+
+      {/* ─── Keyboard Shortcuts Help ─── */}
+      {showShortcuts && (
+        <div
+          data-viztweak=""
+          onClick={() => setShowShortcuts(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 2147483646,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.3)",
+            backdropFilter: "blur(2px)",
+            fontFamily: "var(--vt-font)",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--vt-panel-bg)",
+              border: "1px solid var(--vt-border)",
+              borderRadius: "12px",
+              padding: "20px 24px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+              width: "320px",
+              maxHeight: "80vh",
+              overflowY: "auto",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--vt-text-primary)" }}>Keyboard Shortcuts</span>
+              <button onClick={() => setShowShortcuts(false)} style={{ border: "none", background: "none", cursor: "pointer", color: "var(--vt-text-secondary)", padding: "2px" }}>
+                <IconClose size={14} />
+              </button>
+            </div>
+            {[
+              ["V", "Start inspecting"],
+              ["Escape", "Deselect / stop inspecting"],
+              ["⌘ Shift V", "Toggle inspector"],
+              ["⌘ Z", "Undo"],
+              ["⌘ Shift Z", "Redo"],
+              ["1", "Design tab"],
+              ["2", "Layers tab"],
+              ["3", "Inspect tab"],
+              ["4", "Chat tab"],
+              ["?", "Show shortcuts"],
+            ].map(([key, desc]) => (
+              <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 0" }}>
+                <span style={{ fontSize: "11px", color: "var(--vt-text-secondary)" }}>{desc}</span>
+                <kbd style={{
+                  fontSize: "10px",
+                  fontFamily: "var(--vt-font-mono, monospace)",
+                  background: "var(--vt-hover)",
+                  border: "1px solid var(--vt-border)",
+                  borderRadius: "4px",
+                  padding: "2px 6px",
+                  color: "var(--vt-text-primary)",
+                  whiteSpace: "nowrap",
+                }}>
+                  {key}
+                </kbd>
+              </div>
+            ))}
+
+            {/* Color blind simulation section */}
+            <div style={{ height: "1px", background: "var(--vt-border)", margin: "12px 0" }} />
+            <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--vt-text-primary)", marginBottom: "8px", display: "block" }}>Color Vision Simulation</span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+              {[
+                { id: null, label: "Normal" },
+                { id: "deuteranopia", label: "Deuteranopia" },
+                { id: "protanopia", label: "Protanopia" },
+                { id: "tritanopia", label: "Tritanopia" },
+                { id: "monochromacy", label: "Monochromacy" },
+              ].map((mode) => (
+                <button
+                  key={mode.id ?? "normal"}
+                  onClick={() => setColorBlindMode(mode.id)}
+                  style={{
+                    fontSize: "10px",
+                    fontFamily: "var(--vt-font)",
+                    padding: "3px 8px",
+                    borderRadius: "var(--vt-input-radius)",
+                    border: "1px solid var(--vt-border)",
+                    cursor: "pointer",
+                    background: colorBlindMode === mode.id ? "var(--vt-accent-bg)" : "var(--vt-surface)",
+                    color: colorBlindMode === mode.id ? "var(--vt-accent)" : "var(--vt-text-secondary)",
+                    fontWeight: colorBlindMode === mode.id ? 600 : 400,
+                  }}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ─── Floating pill toolbar ─── */}
       {(() => {
         const expanded = inspecting || selectedElement !== null;
@@ -702,6 +846,11 @@ function VizTweakInner() {
                   icon={panelSide === "right" ? <IconPanelLeft size={15} /> : <IconPanelRight size={15} />}
                   tooltip={`Move panel ${panelSide === "right" ? "left" : "right"}`}
                   onClick={handleToggleSide}
+                />
+                <PillBtn
+                  icon={<span style={{ fontSize: "14px", fontWeight: 700, lineHeight: 1 }}>?</span>}
+                  tooltip="Keyboard shortcuts"
+                  onClick={() => setShowShortcuts(true)}
                 />
                 {selectedElement && (
                   <PillBtn icon={<IconClose size={14} />} tooltip="Close panel (Esc)" onClick={handleClose} />

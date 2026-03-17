@@ -47,7 +47,7 @@ function scanPageColors(): ColorEntry[] {
     const rgb = parseToRgb(raw);
     if (!rgb) return;
     const hex = rgbToHex(...rgb).toLowerCase();
-    if (hex === "#000000" && raw === "rgba(0, 0, 0, 0)") return;
+    if (hex === "#000000" && raw.includes("rgba") && raw.includes(", 0)")) return; // skip truly transparent
     const existing = colorMap.get(hex);
     if (existing) {
       existing.count++;

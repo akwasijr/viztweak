@@ -129,15 +129,22 @@ function auditElement(el: HTMLElement): A11yIssue[] {
   if (tag === "button" || tag === "a" || tag === "input" || tag === "select" || tag === "textarea") {
     const outline = cs.outlineStyle;
     const outlineWidth = parseFloat(cs.outlineWidth) || 0;
-    if (outline === "none" && outlineWidth === 0) {
-      // Check if there's a :focus-visible rule (can't fully detect, but warn)
+    const boxShadow = cs.boxShadow;
+    const hasOutline = outline !== "none" && outlineWidth > 0;
+    const hasBoxShadowFocus = boxShadow && boxShadow !== "none";
+    const borderStyle = cs.borderStyle;
+    const hasBorder = borderStyle !== "none" && (parseFloat(cs.borderWidth) || 0) > 0;
+
+    if (hasOutline || hasBoxShadowFocus) {
+      issues.push({ type: "pass", label: "Focus ring", detail: hasOutline ? "Outline present" : "Box-shadow focus indicator present" });
+    } else if (hasBorder) {
+      issues.push({ type: "pass", label: "Focus ring", detail: "Border may serve as focus indicator" });
+    } else {
       issues.push({
         type: "warning",
         label: "Focus ring",
-        detail: "No visible outline. Ensure :focus-visible styles are defined.",
+        detail: "No visible outline or box-shadow. Ensure :focus-visible styles are defined.",
       });
-    } else {
-      issues.push({ type: "pass", label: "Focus ring", detail: "Outline present" });
     }
   }
 
