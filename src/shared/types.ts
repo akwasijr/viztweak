@@ -112,7 +112,7 @@ export const EDITABLE_PROPERTIES = {
     "lineHeight",
     "letterSpacing",
     "textAlign",
-    "verticalAlign",
+    "textDecoration",
     "color",
   ],
   border: [
@@ -137,6 +137,7 @@ export const EDITABLE_PROPERTIES = {
   effects: [
     "boxShadow",
     "transform",
+    "filter",
   ],
 } as const;
 

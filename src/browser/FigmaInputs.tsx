@@ -671,7 +671,139 @@ export function DualInput({
   );
 }
 
-// ─── 7. CheckboxRow ──────────────────────────────────────────
+// ─── 7. SizeInput (text + unit picker) ───────────────────────
+
+interface SizeInputProps {
+  value: string; // raw CSS value like "300px", "50%", "auto"
+  onChange: (cssValue: string) => void;
+  label?: string;
+}
+
+const SIZE_UNITS = ["px", "%", "auto", "fit-content", "vh", "vw", "em", "rem"];
+const KEYWORD_UNITS = new Set(["auto", "fit-content"]);
+
+function parseSizeValue(raw: string): { num: string; unit: string } {
+  const trimmed = raw.trim();
+  if (KEYWORD_UNITS.has(trimmed)) return { num: "", unit: trimmed };
+  const m = trimmed.match(/^(-?[\d.]+)\s*(px|%|vh|vw|em|rem)?$/);
+  if (m) return { num: m[1], unit: m[2] || "px" };
+  // computed values like "256.5px"
+  const n = parseFloat(trimmed);
+  if (!isNaN(n)) return { num: String(Math.round(n)), unit: "px" };
+  return { num: trimmed, unit: "px" };
+}
+
+export function SizeInput({ value, onChange, label }: SizeInputProps) {
+  const parsed = parseSizeValue(value);
+  const [localNum, setLocalNum] = useState(parsed.num);
+  const [unit, setUnit] = useState(parsed.unit);
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isFocused) {
+      const p = parseSizeValue(value);
+      setLocalNum(p.num);
+      setUnit(p.unit);
+    }
+  }, [value, isFocused]);
+
+  const commit = useCallback(
+    (num: string, u: string) => {
+      if (KEYWORD_UNITS.has(u)) {
+        onChange(u);
+      } else {
+        const n = parseFloat(num);
+        if (!isNaN(n)) {
+          onChange(n + u);
+        }
+      }
+    },
+    [onChange],
+  );
+
+  const isKeyword = KEYWORD_UNITS.has(unit);
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "4px", minWidth: 0 }}>
+      {label && <span style={labelStyle}>{label}</span>}
+      {!isKeyword && (
+        <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+          <input
+            ref={inputRef}
+            type="text"
+            value={localNum}
+            onChange={(e) => setLocalNum(e.target.value)}
+            onFocus={() => {
+              setIsFocused(true);
+              requestAnimationFrame(() => inputRef.current?.select());
+            }}
+            onBlur={() => {
+              setIsFocused(false);
+              commit(localNum, unit);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                commit(localNum, unit);
+                inputRef.current?.blur();
+              }
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                const n = (parseFloat(localNum) || 0) + 1;
+                setLocalNum(String(n));
+                commit(String(n), unit);
+              }
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                const n = (parseFloat(localNum) || 0) - 1;
+                setLocalNum(String(n));
+                commit(String(n), unit);
+              }
+            }}
+            style={{
+              ...baseInputStyle,
+              width: "100%",
+              fontFeatureSettings: '"tnum"',
+              fontVariantNumeric: "tabular-nums",
+              borderColor: isFocused ? "var(--vt-input-border-focus)" : "var(--vt-input-border)",
+            }}
+          />
+        </div>
+      )}
+      <div style={{ flexShrink: 0, minWidth: isKeyword ? "100%" : "52px" }}>
+        <select
+          value={unit}
+          onChange={(e) => {
+            const newUnit = e.target.value;
+            setUnit(newUnit);
+            if (KEYWORD_UNITS.has(newUnit)) {
+              onChange(newUnit);
+            } else {
+              const num = localNum || String(Math.round(parseFloat(value) || 0));
+              setLocalNum(num);
+              commit(num, newUnit);
+            }
+          }}
+          style={{
+            ...baseInputStyle,
+            width: "100%",
+            paddingRight: "16px",
+            appearance: "none",
+            cursor: "pointer",
+          }}
+        >
+          {SIZE_UNITS.map((u) => (
+            <option key={u} value={u}>
+              {KEYWORD_UNITS.has(u) ? u.charAt(0).toUpperCase() + u.slice(1) : u}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+// ─── 8. CheckboxRow ──────────────────────────────────────────
 
 interface CheckboxRowProps {
   label: string;

@@ -13,6 +13,7 @@ import {
   CheckboxRow,
   AlignmentGrid,
   FillRow,
+  SizeInput,
 } from "./FigmaInputs.js";
 import {
   IconTextAlignLeft,
@@ -24,12 +25,6 @@ import {
   IconLayoutColumn,
   IconGrid,
   IconGear,
-  IconAlignLeft,
-  IconAlignCenterH,
-  IconAlignRight,
-  IconAlignTop,
-  IconAlignCenterV,
-  IconAlignBottom,
 } from "./icons.js";
 
 interface StylePanelProps {
@@ -262,6 +257,61 @@ export function StylePanel({
 
   // Shadow
   const [boxShadow, setBoxShadow] = useState(() => cs.boxShadow === "none" ? "" : cs.boxShadow);
+  // Parse shadow sub-values
+  const [shadowX, setShadowX] = useState(() => {
+    const m = cs.boxShadow.match(/(-?\d+)px\s+(-?\d+)px\s+(\d+)px\s*(-?\d+)?px?/);
+    return m ? parseInt(m[1]) : 0;
+  });
+  const [shadowY, setShadowY] = useState(() => {
+    const m = cs.boxShadow.match(/(-?\d+)px\s+(-?\d+)px\s+(\d+)px\s*(-?\d+)?px?/);
+    return m ? parseInt(m[2]) : 2;
+  });
+  const [shadowBlur, setShadowBlur] = useState(() => {
+    const m = cs.boxShadow.match(/(-?\d+)px\s+(-?\d+)px\s+(\d+)px\s*(-?\d+)?px?/);
+    return m ? parseInt(m[3]) : 4;
+  });
+  const [shadowSpread, setShadowSpread] = useState(() => {
+    const m = cs.boxShadow.match(/(-?\d+)px\s+(-?\d+)px\s+(\d+)px\s+(-?\d+)px/);
+    return m ? parseInt(m[4]) : 0;
+  });
+  const [shadowColor, setShadowColor] = useState(() => {
+    const m = cs.boxShadow.match(/(rgba?\([^)]+\)|#[0-9a-fA-F]{3,8})/);
+    return m ? rgbToHex(m[1]) : "#000000";
+  });
+  const [shadowOpacity, setShadowOpacity] = useState(() => {
+    const m = cs.boxShadow.match(/rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([\d.]+)\s*\)/);
+    return m ? Math.round(parseFloat(m[1]) * 100) : 10;
+  });
+
+  // Text decoration
+  const [textDecoration, setTextDecoration] = useState(() => {
+    const td = cs.textDecorationLine || cs.textDecoration || "none";
+    if (td.includes("underline")) return "underline";
+    if (td.includes("line-through")) return "line-through";
+    return "none";
+  });
+
+  // Filter states
+  const [filterBlur, setFilterBlur] = useState(() => {
+    const m = cs.filter.match(/blur\(([\d.]+)px\)/);
+    return m ? parseFloat(m[1]) : 0;
+  });
+  const [filterBrightness, setFilterBrightness] = useState(() => {
+    const m = cs.filter.match(/brightness\(([\d.]+)\)/);
+    return m ? Math.round(parseFloat(m[1]) * 100) : 100;
+  });
+  const [filterContrast, setFilterContrast] = useState(() => {
+    const m = cs.filter.match(/contrast\(([\d.]+)\)/);
+    return m ? Math.round(parseFloat(m[1]) * 100) : 100;
+  });
+  const [filterSaturate, setFilterSaturate] = useState(() => {
+    const m = cs.filter.match(/saturate\(([\d.]+)\)/);
+    return m ? Math.round(parseFloat(m[1]) * 100) : 100;
+  });
+  const [filterGrayscale, setFilterGrayscale] = useState(() => {
+    const m = cs.filter.match(/grayscale\(([\d.]+)\)/);
+    return m ? Math.round(parseFloat(m[1]) * 100) : 0;
+  });
 
   const showTypography = isTextElement(element);
 
@@ -302,6 +352,34 @@ export function StylePanel({
       }
     },
     [element, diffEngine, wsClient, onPushUndo],
+  );
+
+  // Compose and apply box-shadow from sub-values
+  const applyShadow = useCallback(
+    (x: number, y: number, blur: number, spread: number, color: string, opacityPct: number) => {
+      const r = parseInt(color.slice(1, 3), 16) || 0;
+      const g = parseInt(color.slice(3, 5), 16) || 0;
+      const b = parseInt(color.slice(5, 7), 16) || 0;
+      const a = Math.round(opacityPct) / 100;
+      const val = `${x}px ${y}px ${blur}px ${spread}px rgba(${r},${g},${b},${a})`;
+      setBoxShadow(val);
+      apply("box-shadow", val);
+    },
+    [apply],
+  );
+
+  // Compose and apply CSS filter from sub-values
+  const applyFilters = useCallback(
+    (blur: number, brightness: number, contrast: number, saturate: number, grayscale: number) => {
+      const parts: string[] = [];
+      if (blur > 0) parts.push(`blur(${blur}px)`);
+      if (brightness !== 100) parts.push(`brightness(${brightness / 100})`);
+      if (contrast !== 100) parts.push(`contrast(${contrast / 100})`);
+      if (saturate !== 100) parts.push(`saturate(${saturate / 100})`);
+      if (grayscale > 0) parts.push(`grayscale(${grayscale / 100})`);
+      apply("filter", parts.length > 0 ? parts.join(" ") : "none");
+    },
+    [apply],
   );
 
   // Send initial selection
@@ -359,23 +437,6 @@ export function StylePanel({
     flexShrink: 0,
   };
 
-  // Width/Height select options
-  const widthOptions = [
-    { value: w + "px", label: w + "px" },
-    { value: "100%", label: "Fill" },
-    { value: "auto", label: "Auto" },
-    { value: "fit-content", label: "Hug" },
-  ];
-  const heightOptions = [
-    { value: h + "px", label: h + "px" },
-    { value: "100%", label: "Fill" },
-    { value: "auto", label: "Auto" },
-    { value: "fit-content", label: "Hug" },
-  ];
-
-  const currentWidthValue = fillWidth ? "100%" : hugWidth ? "fit-content" : w + "px";
-  const currentHeightValue = fillHeight ? "100%" : hugHeight ? "fit-content" : h + "px";
-
   return (
     <div
       style={{
@@ -394,32 +455,6 @@ export function StylePanel({
       />
       {expandedSections.position && (
         <div style={sectionBodyStyle}>
-          {/* Alignment pill */}
-          <div style={rowStyle}>
-            <ToggleGroup
-              value=""
-              onChange={(v) => {
-                apply("text-align", v);
-              }}
-              options={[
-                { value: "left", icon: <IconAlignLeft size={12} />, tooltip: "Align Left" },
-                { value: "center", icon: <IconAlignCenterH size={12} />, tooltip: "Align Center" },
-                { value: "right", icon: <IconAlignRight size={12} />, tooltip: "Align Right" },
-              ]}
-            />
-            <div style={{ width: "4px" }} />
-            <ToggleGroup
-              value=""
-              onChange={(v) => {
-                apply("vertical-align", v);
-              }}
-              options={[
-                { value: "top", icon: <IconAlignTop size={12} />, tooltip: "Align Top" },
-                { value: "middle", icon: <IconAlignCenterV size={12} />, tooltip: "Align Middle" },
-                { value: "bottom", icon: <IconAlignBottom size={12} />, tooltip: "Align Bottom" },
-              ]}
-            />
-          </div>
           {/* Position type */}
           <div style={rowStyle}>
             <span style={{ ...subLabelStyle, width: "36px", flexShrink: 0 }}>Type</span>
@@ -729,7 +764,6 @@ export function StylePanel({
               <NumericInput
                 label="T"
                 value={marTop}
-                min={0}
                 onChange={(v) => {
                   setMarTop(v);
                   apply("margin-top", v + "px");
@@ -738,7 +772,6 @@ export function StylePanel({
               <NumericInput
                 label="R"
                 value={marRight}
-                min={0}
                 onChange={(v) => {
                   setMarRight(v);
                   apply("margin-right", v + "px");
@@ -747,7 +780,6 @@ export function StylePanel({
               <NumericInput
                 label="B"
                 value={marBottom}
-                min={0}
                 onChange={(v) => {
                   setMarBottom(v);
                   apply("margin-bottom", v + "px");
@@ -756,7 +788,6 @@ export function StylePanel({
               <NumericInput
                 label="L"
                 value={marLeft}
-                min={0}
                 onChange={(v) => {
                   setMarLeft(v);
                   apply("margin-left", v + "px");
@@ -775,7 +806,6 @@ export function StylePanel({
         title="Size"
         expanded={expandedSections.size}
         onToggle={() => toggleSection("size")}
-        onAdd={() => {}}
       />
       {expandedSections.size && (
         <div style={sectionBodyStyle}>
@@ -783,50 +813,30 @@ export function StylePanel({
             <div style={{ flex: 1, minWidth: 0 }}>
               <span style={subLabelStyle}>Width</span>
               <div style={{ marginTop: "2px" }}>
-                <SelectInput
-                  value={currentWidthValue}
+                <SizeInput
+                  value={fillWidth ? "100%" : hugWidth ? "fit-content" : cs.width}
                   onChange={(v) => {
-                    if (v === "100%") {
-                      setFillWidth(true);
-                      setHugWidth(false);
-                    } else if (v === "fit-content") {
-                      setFillWidth(false);
-                      setHugWidth(true);
-                    } else if (v === "auto") {
-                      setFillWidth(false);
-                      setHugWidth(false);
-                    } else {
-                      setFillWidth(false);
-                      setHugWidth(false);
-                    }
+                    if (v === "100%") { setFillWidth(true); setHugWidth(false); }
+                    else if (v === "fit-content") { setFillWidth(false); setHugWidth(true); }
+                    else if (v === "auto") { setFillWidth(false); setHugWidth(false); }
+                    else { setFillWidth(false); setHugWidth(false); setW(parseFloat(v) || 0); }
                     apply("width", v);
                   }}
-                  options={widthOptions}
                 />
               </div>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <span style={subLabelStyle}>Height</span>
               <div style={{ marginTop: "2px" }}>
-                <SelectInput
-                  value={currentHeightValue}
+                <SizeInput
+                  value={fillHeight ? "100%" : hugHeight ? "fit-content" : cs.height}
                   onChange={(v) => {
-                    if (v === "100%") {
-                      setFillHeight(true);
-                      setHugHeight(false);
-                    } else if (v === "fit-content") {
-                      setFillHeight(false);
-                      setHugHeight(true);
-                    } else if (v === "auto") {
-                      setFillHeight(false);
-                      setHugHeight(false);
-                    } else {
-                      setFillHeight(false);
-                      setHugHeight(false);
-                    }
+                    if (v === "100%") { setFillHeight(true); setHugHeight(false); }
+                    else if (v === "fit-content") { setFillHeight(false); setHugHeight(true); }
+                    else if (v === "auto") { setFillHeight(false); setHugHeight(false); }
+                    else { setFillHeight(false); setHugHeight(false); setH(parseFloat(v) || 0); }
                     apply("height", v);
                   }}
-                  options={heightOptions}
                 />
               </div>
             </div>
@@ -1106,8 +1116,10 @@ export function StylePanel({
         onToggle={() => toggleSection("shadow")}
         onAdd={() => {
           if (!boxShadow) {
-            const defaultShadow = "0px 2px 4px rgba(0,0,0,0.1)";
+            const defaultShadow = "0px 2px 4px 0px rgba(0,0,0,0.1)";
             setBoxShadow(defaultShadow);
+            setShadowX(0); setShadowY(2); setShadowBlur(4); setShadowSpread(0);
+            setShadowColor("#000000"); setShadowOpacity(10);
             apply("box-shadow", defaultShadow);
           }
         }}
@@ -1115,22 +1127,47 @@ export function StylePanel({
       {expandedSections.shadow && (
         <div style={sectionBodyStyle}>
           {boxShadow ? (
-            <div
-              style={{
-                fontSize: "var(--vt-font-size-input)",
-                color: "var(--vt-text-primary)",
-                background: "var(--vt-input-bg)",
-                border: "1px solid var(--vt-border)",
-                borderRadius: "var(--vt-input-radius)",
-                padding: "4px 6px",
-                wordBreak: "break-all",
-              }}
-            >
-              {boxShadow}
-            </div>
+            <>
+              <div style={{ display: "flex", gap: "4px" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <NumericInput label="X" value={shadowX} onChange={(v) => { setShadowX(v); applyShadow(v, shadowY, shadowBlur, shadowSpread, shadowColor, shadowOpacity); }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <NumericInput label="Y" value={shadowY} onChange={(v) => { setShadowY(v); applyShadow(shadowX, v, shadowBlur, shadowSpread, shadowColor, shadowOpacity); }} />
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "4px" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <NumericInput label="Blur" value={shadowBlur} suffix="px" min={0} onChange={(v) => { setShadowBlur(v); applyShadow(shadowX, shadowY, v, shadowSpread, shadowColor, shadowOpacity); }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <NumericInput label="Spread" value={shadowSpread} suffix="px" onChange={(v) => { setShadowSpread(v); applyShadow(shadowX, shadowY, shadowBlur, v, shadowColor, shadowOpacity); }} />
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <ColorInput
+                    label="Color"
+                    value={shadowColor}
+                    onChange={(hex) => { setShadowColor(hex); applyShadow(shadowX, shadowY, shadowBlur, shadowSpread, hex, shadowOpacity); }}
+                    opacity={shadowOpacity}
+                    onOpacityChange={(v) => { setShadowOpacity(v); applyShadow(shadowX, shadowY, shadowBlur, shadowSpread, shadowColor, v); }}
+                  />
+                </div>
+                <button
+                  onClick={() => { setBoxShadow(""); apply("box-shadow", "none"); }}
+                  title="Remove shadow"
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: "20px", height: "20px", border: "none", background: "transparent",
+                    borderRadius: "var(--vt-input-radius)", cursor: "pointer", color: "var(--vt-text-secondary)", padding: 0,
+                  }}
+                >✕</button>
+              </div>
+            </>
           ) : (
             <span style={{ fontSize: "var(--vt-font-size-label)", color: "var(--vt-text-disabled)" }}>
-              No shadow
+              No shadow — click + to add
             </span>
           )}
         </div>
@@ -1281,6 +1318,22 @@ export function StylePanel({
                   ]}
                 />
               </div>
+              {/* Text decoration */}
+              <div style={rowStyle}>
+                <span style={{ ...subLabelStyle, width: "36px", flexShrink: 0 }}>Decor</span>
+                <ToggleGroup
+                  value={textDecoration}
+                  onChange={(v) => {
+                    setTextDecoration(v);
+                    apply("text-decoration", v);
+                  }}
+                  options={[
+                    { value: "none", icon: <span style={{ fontSize: "10px", fontWeight: 600, lineHeight: 1 }}>—</span>, tooltip: "None" },
+                    { value: "underline", icon: <span style={{ fontSize: "10px", fontWeight: 600, lineHeight: 1, textDecoration: "underline" }}>U</span>, tooltip: "Underline" },
+                    { value: "line-through", icon: <span style={{ fontSize: "10px", fontWeight: 600, lineHeight: 1, textDecoration: "line-through" }}>S</span>, tooltip: "Strikethrough" },
+                  ]}
+                />
+              </div>
               <ColorInput
                 label="Color"
                 value={textColor}
@@ -1300,13 +1353,48 @@ export function StylePanel({
         title="Filters"
         expanded={expandedSections.filters}
         onToggle={() => toggleSection("filters")}
-        onAdd={() => {}}
       />
       {expandedSections.filters && (
         <div style={sectionBodyStyle}>
-          <span style={{ fontSize: "var(--vt-font-size-label)", color: "var(--vt-text-disabled)" }}>
-            No filters applied
-          </span>
+          <NumericInput
+            label="Blur"
+            value={filterBlur}
+            suffix="px"
+            min={0}
+            onChange={(v) => { setFilterBlur(v); applyFilters(v, filterBrightness, filterContrast, filterSaturate, filterGrayscale); }}
+          />
+          <NumericInput
+            label="Bright"
+            value={filterBrightness}
+            suffix="%"
+            min={0}
+            max={200}
+            onChange={(v) => { setFilterBrightness(v); applyFilters(filterBlur, v, filterContrast, filterSaturate, filterGrayscale); }}
+          />
+          <NumericInput
+            label="Contrast"
+            value={filterContrast}
+            suffix="%"
+            min={0}
+            max={200}
+            onChange={(v) => { setFilterContrast(v); applyFilters(filterBlur, filterBrightness, v, filterSaturate, filterGrayscale); }}
+          />
+          <NumericInput
+            label="Saturate"
+            value={filterSaturate}
+            suffix="%"
+            min={0}
+            max={200}
+            onChange={(v) => { setFilterSaturate(v); applyFilters(filterBlur, filterBrightness, filterContrast, v, filterGrayscale); }}
+          />
+          <NumericInput
+            label="Gray"
+            value={filterGrayscale}
+            suffix="%"
+            min={0}
+            max={100}
+            onChange={(v) => { setFilterGrayscale(v); applyFilters(filterBlur, filterBrightness, filterContrast, filterSaturate, v); }}
+          />
         </div>
       )}
       <div style={dividerStyle} />
