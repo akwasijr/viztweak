@@ -7,6 +7,7 @@ interface A11yIssue {
   type: "error" | "warning" | "pass";
   label: string;
   detail: string;
+  element?: HTMLElement;
 }
 
 interface AccessibilityCheckerProps {
@@ -264,6 +265,140 @@ function auditElement(el: HTMLElement): A11yIssue[] {
   return issues;
 }
 
+// ─── Page-wide audit ──────────────────────────────────────────
+
+function auditPage(): A11yIssue[] {
+  const issues: A11yIssue[] = [];
+  const body = document.body;
+
+  // Skip viztweak portal elements
+  const isVizTweak = (el: Element) => el.closest("[data-viztweak]") || el.id === "viztweak-portal";
+
+  // 1. Check all images
+  body.querySelectorAll("img").forEach((img) => {
+    if (isVizTweak(img)) return;
+    const alt = img.getAttribute("alt");
+    if (alt === null) {
+      issues.push({ type: "error", label: "Image", detail: `Missing alt: ${img.src.split("/").pop()?.slice(0, 30) || "image"}`, element: img as HTMLElement });
+    }
+  });
+
+  // 2. Check heading hierarchy
+  const headings = Array.from(body.querySelectorAll("h1,h2,h3,h4,h5,h6")).filter((h) => !isVizTweak(h));
+  const h1Count = headings.filter((h) => h.tagName === "H1").length;
+  if (h1Count === 0) {
+    issues.push({ type: "warning", label: "Headings", detail: "No <h1> found on page" });
+  } else if (h1Count > 1) {
+    issues.push({ type: "warning", label: "Headings", detail: `${h1Count} <h1> elements — page should have exactly one` });
+  }
+  for (let i = 1; i < headings.length; i++) {
+    const curr = parseInt(headings[i].tagName[1]);
+    const prev = parseInt(headings[i - 1].tagName[1]);
+    if (curr > prev + 1) {
+      issues.push({ type: "warning", label: "Headings", detail: `Skipped from <h${prev}> to <h${curr}>`, element: headings[i] as HTMLElement });
+    }
+  }
+
+  // 3. Check lang attribute
+  if (!document.documentElement.getAttribute("lang")) {
+    issues.push({ type: "error", label: "Language", detail: "Missing lang attribute on <html>" });
+  }
+
+  // 4. Check form inputs for labels
+  body.querySelectorAll("input, select, textarea").forEach((input) => {
+    if (isVizTweak(input)) return;
+    const el = input as HTMLElement;
+    const id = el.id;
+    const hasLabel = id ? document.querySelector(`label[for="${id}"]`) : null;
+    const ariaLabel = el.getAttribute("aria-label") || el.getAttribute("aria-labelledby");
+    if (!hasLabel && !ariaLabel) {
+      const name = el.getAttribute("name") || el.getAttribute("type") || el.tagName.toLowerCase();
+      issues.push({ type: "error", label: "Label", detail: `Unlabeled ${el.tagName.toLowerCase()}[name="${name}"]`, element: el });
+    }
+  });
+
+  // 5. Check links
+  body.querySelectorAll("a").forEach((a) => {
+    if (isVizTweak(a)) return;
+    const text = a.textContent?.trim() || "";
+    if (!text && !a.getAttribute("aria-label") && !a.querySelector("img")) {
+      issues.push({ type: "error", label: "Link", detail: "Empty link with no text or aria-label", element: a as HTMLElement });
+    }
+  });
+
+  // 6. Check interactive divs
+  body.querySelectorAll("[onclick], [role='button']").forEach((el) => {
+    if (isVizTweak(el)) return;
+    if (el.tagName === "DIV" || el.tagName === "SPAN") {
+      if (!el.getAttribute("tabindex")) {
+        issues.push({ type: "error", label: "Keyboard", detail: `Clickable <${el.tagName.toLowerCase()}> not keyboard accessible`, element: el as HTMLElement });
+      }
+    }
+  });
+
+  // 7. Check contrast on visible text elements
+  const textTags = "p, span, li, td, th, label, h1, h2, h3, h4, h5, h6, a, button";
+  let contrastFails = 0;
+  body.querySelectorAll(textTags).forEach((el) => {
+    if (isVizTweak(el)) return;
+    const htmlEl = el as HTMLElement;
+    if (!htmlEl.textContent?.trim()) return;
+    const cs = window.getComputedStyle(htmlEl);
+    const fg = parseColor(cs.color);
+    const bg = getEffectiveBg(htmlEl);
+    if (fg) {
+      const ratio = contrastRatio(fg, bg);
+      const fontSize = parseFloat(cs.fontSize);
+      const isBold = parseInt(cs.fontWeight) >= 700;
+      const isLargeText = fontSize >= 24 || (fontSize >= 18.66 && isBold);
+      const minRatio = isLargeText ? 3 : 4.5;
+      if (ratio < minRatio) contrastFails++;
+    }
+  });
+  if (contrastFails > 0) {
+    issues.push({ type: "error", label: "Contrast", detail: `${contrastFails} text element${contrastFails > 1 ? "s" : ""} fail WCAG AA contrast` });
+  } else {
+    issues.push({ type: "pass", label: "Contrast", detail: "All visible text passes WCAG AA" });
+  }
+
+  // 8. Check tap targets
+  let smallTargets = 0;
+  body.querySelectorAll("button, a, input, [role='button']").forEach((el) => {
+    if (isVizTweak(el)) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0 && (rect.width < 44 || rect.height < 44)) {
+      smallTargets++;
+    }
+  });
+  if (smallTargets > 0) {
+    issues.push({ type: "warning", label: "Tap targets", detail: `${smallTargets} interactive element${smallTargets > 1 ? "s" : ""} smaller than 44×44px` });
+  } else {
+    issues.push({ type: "pass", label: "Tap targets", detail: "All interactive elements meet 44×44px minimum" });
+  }
+
+  // 9. Check for skip navigation link
+  const firstLink = body.querySelector("a");
+  const hasSkipLink = firstLink && (firstLink.textContent?.toLowerCase().includes("skip") || firstLink.getAttribute("href")?.startsWith("#"));
+  if (!hasSkipLink) {
+    issues.push({ type: "warning", label: "Skip link", detail: "No skip navigation link found — add one for keyboard users" });
+  }
+
+  // 10. Check for landmark roles
+  const hasMain = body.querySelector("main") || body.querySelector("[role='main']");
+  const hasNav = body.querySelector("nav") || body.querySelector("[role='navigation']");
+  if (!hasMain) {
+    issues.push({ type: "warning", label: "Landmarks", detail: "No <main> landmark — screen readers use these to navigate" });
+  }
+  if (!hasNav) {
+    issues.push({ type: "warning", label: "Landmarks", detail: "No <nav> landmark found" });
+  }
+  if (hasMain && hasNav) {
+    issues.push({ type: "pass", label: "Landmarks", detail: "Page has main and navigation landmarks" });
+  }
+
+  return issues;
+}
+
 // ─── Issue badge colors ───────────────────────────────────────
 
 const typeStyles: Record<A11yIssue["type"], { bg: string; color: string; dot: string }> = {
@@ -276,7 +411,9 @@ const typeStyles: Record<A11yIssue["type"], { bg: string; color: string; dot: st
 
 export function AccessibilityChecker({ element }: AccessibilityCheckerProps) {
   const [issues, setIssues] = useState<A11yIssue[]>([]);
+  const [pageIssues, setPageIssues] = useState<A11yIssue[] | null>(null);
   const [expanded, setExpanded] = useState(true);
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     if (!element) {
@@ -286,10 +423,64 @@ export function AccessibilityChecker({ element }: AccessibilityCheckerProps) {
     setIssues(auditElement(element));
   }, [element]);
 
+  const handleScanPage = useCallback(() => {
+    setScanning(true);
+    // Run async to avoid blocking UI
+    requestAnimationFrame(() => {
+      setPageIssues(auditPage());
+      setScanning(false);
+    });
+  }, []);
+
   if (!element) return null;
 
   const errors = issues.filter((i) => i.type === "error").length;
   const warnings = issues.filter((i) => i.type === "warning").length;
+  const pageErrors = pageIssues?.filter((i) => i.type === "error").length || 0;
+  const pageWarnings = pageIssues?.filter((i) => i.type === "warning").length || 0;
+
+  const renderIssueList = (list: A11yIssue[]) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+      {list.length === 0 && (
+        <span style={{ fontSize: "11px", color: "var(--vt-text-secondary)" }}>
+          No checks applicable for this element type.
+        </span>
+      )}
+      {list.map((issue, i) => {
+        const style = typeStyles[issue.type];
+        return (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "6px",
+              padding: "4px 6px",
+              borderRadius: "4px",
+              background: style.bg,
+              fontSize: "10px",
+              lineHeight: "14px",
+            }}
+          >
+            <span
+              style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                background: style.dot,
+                flexShrink: 0,
+                marginTop: "4px",
+              }}
+            />
+            <div style={{ minWidth: 0 }}>
+              <span style={{ fontWeight: 600, color: style.color }}>{issue.label}</span>
+              <span style={{ color: style.color, marginLeft: "4px" }}>{issue.detail}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div>
@@ -299,45 +490,57 @@ export function AccessibilityChecker({ element }: AccessibilityCheckerProps) {
         onToggle={() => setExpanded(!expanded)}
       />
       {expanded && (
-        <div style={{ padding: "4px 12px 8px", display: "flex", flexDirection: "column", gap: "3px" }}>
-          {issues.length === 0 && (
-            <span style={{ fontSize: "11px", color: "var(--vt-text-secondary)" }}>
-              No checks applicable for this element type.
-            </span>
-          )}
-          {issues.map((issue, i) => {
-            const style = typeStyles[issue.type];
-            return (
-              <div
-                key={i}
+        <div style={{ padding: "4px 12px 8px", display: "flex", flexDirection: "column", gap: "6px" }}>
+          {/* Element-level audit */}
+          <span style={{ fontSize: "10px", fontWeight: 600, color: "var(--vt-text-secondary)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            Selected element
+          </span>
+          {renderIssueList(issues)}
+
+          {/* Page-wide audit */}
+          <div style={{ borderTop: "1px solid var(--vt-border)", margin: "4px 0", paddingTop: "6px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+              <span style={{ fontSize: "10px", fontWeight: 600, color: "var(--vt-text-secondary)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Full page audit
+              </span>
+              <button
+                onClick={handleScanPage}
                 style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "6px",
-                  padding: "4px 6px",
-                  borderRadius: "4px",
-                  background: style.bg,
+                  padding: "2px 8px",
                   fontSize: "10px",
-                  lineHeight: "14px",
+                  fontWeight: 500,
+                  color: "var(--vt-accent)",
+                  background: "var(--vt-accent-bg)",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontFamily: "var(--vt-font)",
                 }}
               >
-                <span
-                  style={{
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "50%",
-                    background: style.dot,
-                    flexShrink: 0,
-                    marginTop: "4px",
-                  }}
-                />
-                <div style={{ minWidth: 0 }}>
-                  <span style={{ fontWeight: 600, color: style.color }}>{issue.label}</span>
-                  <span style={{ color: style.color, marginLeft: "4px" }}>{issue.detail}</span>
+                {scanning ? "Scanning…" : pageIssues ? "Rescan" : "Scan page"}
+              </button>
+            </div>
+            {pageIssues && (
+              <>
+                <div style={{ display: "flex", gap: "8px", marginBottom: "4px" }}>
+                  {pageErrors > 0 && (
+                    <span style={{ fontSize: "10px", fontWeight: 600, color: "#EF4444" }}>
+                      {pageErrors} error{pageErrors !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                  {pageWarnings > 0 && (
+                    <span style={{ fontSize: "10px", fontWeight: 600, color: "#F59E0B" }}>
+                      {pageWarnings} warning{pageWarnings !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                  {pageErrors === 0 && pageWarnings === 0 && (
+                    <span style={{ fontSize: "10px", fontWeight: 600, color: "#22C55E" }}>All checks pass</span>
+                  )}
                 </div>
-              </div>
-            );
-          })}
+                {renderIssueList(pageIssues)}
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

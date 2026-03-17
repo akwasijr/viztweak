@@ -274,9 +274,9 @@ export function StylePanel({
   // For <html> changes, the portal CSS isolation rules override inherited values.
   const apply = useCallback(
     (cssProp: string, value: string) => {
-      // Capture previous value for undo before applying
+      // Capture previous INLINE value for undo (empty string = no inline override)
       const cssName = cssProp.includes("-") ? cssProp : cssProp.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
-      const previousValue = element.style.getPropertyValue(cssName) || window.getComputedStyle(element).getPropertyValue(cssName) || "";
+      const previousValue = element.style.getPropertyValue(cssName);
       if (onPushUndo) {
         onPushUndo({ element, property: cssProp, previousValue });
       }

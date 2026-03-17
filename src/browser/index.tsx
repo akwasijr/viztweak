@@ -221,28 +221,29 @@ function VizTweakInner() {
   const handleUndo = useCallback(() => {
     if (undoStack.length === 0) return;
     const entry = undoStack[undoStack.length - 1];
-    const currentValue = entry.element.style.getPropertyValue(
-      entry.property.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
-    );
+    const cssName = entry.property.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+    const currentValue = entry.element.style.getPropertyValue(cssName);
     setRedoStack((prev) => [...prev, { ...entry, previousValue: currentValue }]);
-    entry.element.style.setProperty(
-      entry.property.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`),
-      entry.previousValue
-    );
+    // If previous value was empty, remove the inline override entirely
+    if (!entry.previousValue) {
+      entry.element.style.removeProperty(cssName);
+    } else {
+      entry.element.style.setProperty(cssName, entry.previousValue);
+    }
     setUndoStack((prev) => prev.slice(0, -1));
   }, [undoStack]);
 
   const handleRedo = useCallback(() => {
     if (redoStack.length === 0) return;
     const entry = redoStack[redoStack.length - 1];
-    const currentValue = entry.element.style.getPropertyValue(
-      entry.property.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
-    );
+    const cssName = entry.property.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+    const currentValue = entry.element.style.getPropertyValue(cssName);
     setUndoStack((prev) => [...prev, { ...entry, previousValue: currentValue }]);
-    entry.element.style.setProperty(
-      entry.property.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`),
-      entry.previousValue
-    );
+    if (!entry.previousValue) {
+      entry.element.style.removeProperty(cssName);
+    } else {
+      entry.element.style.setProperty(cssName, entry.previousValue);
+    }
     setRedoStack((prev) => prev.slice(0, -1));
   }, [redoStack]);
 
