@@ -473,18 +473,15 @@ function VizTweakInner() {
               <CSSVarInspector element={selectedElement} />
             </div>
           ) : activeTab === "chat" ? (
-            <div style={{ display: "flex", flexDirection: "column", flex: "1 1 0%", minHeight: 0, height: 0, overflow: "hidden" }}>
+            <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
               {/* Messages area */}
               <div
                 ref={chatScrollRef}
                 style={{
-                  flex: "1 1 0%",
+                  flex: 1,
                   minHeight: 0,
                   overflowY: "auto",
                   padding: "8px 10px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "6px",
                 }}
               >
                 {messages.length === 0 && (() => {
@@ -580,6 +577,7 @@ function VizTweakInner() {
                       display: "flex",
                       flexDirection: "column",
                       alignItems: msg.from === "designer" ? "flex-end" : "flex-start",
+                      marginBottom: "6px",
                     }}
                   >
                     <div
