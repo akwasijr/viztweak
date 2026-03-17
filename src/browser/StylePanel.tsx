@@ -38,6 +38,7 @@ interface StylePanelProps {
   diffEngine: DiffEngine;
   wsClient: WSClient;
   onClose: () => void;
+  onPushUndo?: (entry: { element: HTMLElement; property: string; previousValue: string }) => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -157,6 +158,7 @@ export function StylePanel({
   diffEngine,
   wsClient,
   onClose,
+  onPushUndo,
 }: StylePanelProps) {
   // Read computed styles as initial values
   const cs = window.getComputedStyle(element);
@@ -272,6 +274,13 @@ export function StylePanel({
   // For <html> changes, the portal CSS isolation rules override inherited values.
   const apply = useCallback(
     (cssProp: string, value: string) => {
+      // Capture previous value for undo before applying
+      const cssName = cssProp.includes("-") ? cssProp : cssProp.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+      const previousValue = element.style.getPropertyValue(cssName) || window.getComputedStyle(element).getPropertyValue(cssName) || "";
+      if (onPushUndo) {
+        onPushUndo({ element, property: cssProp, previousValue });
+      }
+
       element.style.setProperty(cssProp, value);
 
       const diff = diffEngine.generateDiff(element);
@@ -291,7 +300,7 @@ export function StylePanel({
         });
       }
     },
-    [element, diffEngine, wsClient],
+    [element, diffEngine, wsClient, onPushUndo],
   );
 
   // Send initial selection

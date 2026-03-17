@@ -247,19 +247,13 @@ function VizTweakInner() {
   }, [redoStack]);
 
   const handleReset = useCallback(() => {
-    if (!selectedElement) return;
-    diffEngine.clearBaseline(selectedElement);
-    // Remove all inline styles we may have set
-    for (const prop of ALL_EDITABLE_PROPERTIES) {
-      selectedElement.style.removeProperty(
-        prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
-      );
-    }
+    // Reset ALL tracked elements to their baselines, not just the selected one
+    const count = diffEngine.resetAll(ALL_EDITABLE_PROPERTIES);
     setUndoStack([]);
     setRedoStack([]);
-    // Re-capture baseline
-    diffEngine.captureBaseline(selectedElement, ALL_EDITABLE_PROPERTIES);
-    setElementInfo(resolveElement(selectedElement));
+    if (selectedElement) {
+      setElementInfo(resolveElement(selectedElement));
+    }
   }, [selectedElement, diffEngine]);
 
   const handleCopyStyles = useCallback(() => {
@@ -272,6 +266,36 @@ function VizTweakInner() {
     }
     setCopiedStyles(styles);
   }, [selectedElement]);
+
+  // Copy all visual changes to clipboard as formatted markdown
+  const handleCopyChanges = useCallback(() => {
+    const text = diffEngine.formatAllChangesText();
+    navigator.clipboard.writeText(text).catch(() => {
+      // Fallback: create textarea and exec copy
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.cssText = "position:fixed;opacity:0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    });
+  }, [diffEngine]);
+
+  // Push undo entry from StylePanel's apply()
+  const handlePushUndo = useCallback((entry: { element: HTMLElement; property: string; previousValue: string }) => {
+    setUndoStack((prev) => [...prev, entry]);
+    setRedoStack([]);
+  }, []);
+
+  // Track change count for badge display
+  const [changeCount, setChangeCount] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setChangeCount(diffEngine.getChangeCount());
+    }, 500);
+    return () => clearInterval(interval);
+  }, [diffEngine]);
 
   const handlePasteStyles = useCallback(() => {
     if (!selectedElement || !copiedStyles) return;
@@ -563,6 +587,7 @@ function VizTweakInner() {
                 diffEngine={diffEngine}
                 wsClient={wsClient}
                 onClose={handleClose}
+                onPushUndo={handlePushUndo}
               />
             </div>
           ) : activeTab === "inspect" ? (
@@ -969,10 +994,41 @@ function VizTweakInner() {
 
                 <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
 
-                <PillBtn icon={<IconCopy size={15} />} tooltip="Copy styles" onClick={handleCopyStyles} disabled={!selectedElement} />
                 <PillBtn icon={<IconUndo size={15} />} tooltip="Undo (Ctrl+Z)" onClick={handleUndo} disabled={undoStack.length === 0} />
                 <PillBtn icon={<IconRedo size={15} />} tooltip="Redo (Ctrl+Shift+Z)" onClick={handleRedo} disabled={redoStack.length === 0} />
-                <PillBtn icon={<IconReset size={15} />} tooltip="Reset all changes" onClick={handleReset} disabled={!selectedElement} />
+                <PillBtn icon={<IconReset size={15} />} tooltip="Reset all changes" onClick={handleReset} disabled={changeCount === 0} />
+
+                <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
+
+                {/* Copy all changes — with change count badge */}
+                <div style={{ position: "relative", display: "inline-flex" }}>
+                  <PillBtn icon={<IconCopy size={15} />} tooltip="Copy all changes to clipboard" onClick={handleCopyChanges} disabled={changeCount === 0} />
+                  {changeCount > 0 && (
+                    <span
+                      data-viztweak=""
+                      style={{
+                        position: "absolute",
+                        top: "-4px",
+                        right: "-4px",
+                        minWidth: "16px",
+                        height: "16px",
+                        borderRadius: "8px",
+                        background: "var(--vt-accent)",
+                        color: "#fff",
+                        fontSize: "9px",
+                        fontWeight: 600,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "0 4px",
+                        lineHeight: 1,
+                        pointerEvents: "none",
+                      }}
+                    >
+                      {changeCount}
+                    </span>
+                  )}
+                </div>
 
                 <div style={{ width: "1px", height: "20px", background: "var(--vt-border)", flexShrink: 0 }} />
 

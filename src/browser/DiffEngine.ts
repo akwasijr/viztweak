@@ -96,4 +96,89 @@ export class DiffEngine {
   clearAll() {
     this.originalStyles.clear();
   }
+
+  /**
+   * Resets ALL tracked elements back to their original baseline styles.
+   * Removes inline overrides we applied and re-captures fresh baselines.
+   */
+  resetAll(properties: readonly string[]): number {
+    let resetCount = 0;
+    for (const [el, baseline] of this.originalStyles) {
+      if (!el.isConnected) continue;
+      for (const prop of Object.keys(baseline)) {
+        const cssName = prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+        el.style.removeProperty(cssName);
+      }
+      resetCount++;
+    }
+    // Re-capture all baselines
+    const elements = [...this.originalStyles.keys()];
+    this.originalStyles.clear();
+    for (const el of elements) {
+      if (el.isConnected) {
+        this.captureBaseline(el, properties);
+      }
+    }
+    return resetCount;
+  }
+
+  /**
+   * Returns the total number of changed properties across all tracked elements.
+   */
+  getChangeCount(): number {
+    let count = 0;
+    for (const [el, baseline] of this.originalStyles) {
+      if (!el.isConnected) continue;
+      const computed = window.getComputedStyle(el);
+      for (const [prop, originalValue] of Object.entries(baseline)) {
+        const cssName = prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+        const currentValue = computed.getPropertyValue(cssName) || "";
+        if (currentValue !== originalValue) count++;
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Formats ALL changes across all elements as a structured text block
+   * suitable for pasting into a coding agent.
+   */
+  formatAllChangesText(): string {
+    const allDiffs = this.getAllDiffs();
+    if (allDiffs.size === 0) return "No visual changes recorded.";
+
+    const lines: string[] = [
+      "# VizTweak — Visual Changes",
+      "",
+      `Total: ${allDiffs.size} element(s) modified`,
+      "",
+    ];
+
+    let elemIdx = 0;
+    for (const [el, changes] of allDiffs) {
+      elemIdx++;
+      const info = resolveElement(el);
+      const tag = `<${info.tagName}>`;
+      const name = info.componentName ? `${info.componentName} (${tag})` : tag;
+      const selector = info.selector;
+
+      lines.push(`## ${elemIdx}. ${name}`);
+      lines.push(`Selector: \`${selector}\``);
+      if (info.classList.length) lines.push(`Classes: \`${info.classList.join(" ")}\``);
+      lines.push("");
+      lines.push("| Property | Before | After |");
+      lines.push("|----------|--------|-------|");
+
+      for (const [prop, { original, current }] of Object.entries(changes)) {
+        const cssName = prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+        lines.push(`| ${cssName} | ${original} | ${current} |`);
+      }
+      lines.push("");
+    }
+
+    lines.push("---");
+    lines.push("Apply these changes to the corresponding CSS/component files in the project.");
+
+    return lines.join("\n");
+  }
 }
