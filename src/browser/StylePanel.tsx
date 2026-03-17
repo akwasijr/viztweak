@@ -91,7 +91,7 @@ function hasFill(cs: CSSStyleDeclaration): boolean {
 // ─── Section wrapper ──────────────────────────────────────────
 
 const sectionBodyStyle: React.CSSProperties = {
-  padding: "4px 12px 8px",
+  padding: "4px 12px 10px",
   display: "flex",
   flexDirection: "column",
   gap: "6px",
@@ -106,7 +106,7 @@ const rowStyle: React.CSSProperties = {
 const dividerStyle: React.CSSProperties = {
   height: "1px",
   background: "var(--vt-border)",
-  margin: 0,
+  margin: "2px 0",
 };
 
 // ─── Weight options for Select ────────────────────────────────

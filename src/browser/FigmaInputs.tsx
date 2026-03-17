@@ -14,7 +14,7 @@ const baseInputStyle: React.CSSProperties = {
   borderRadius: "var(--vt-input-radius)",
   outline: "none",
   padding: "0 6px",
-  transition: "border-color var(--vt-transition-fast)",
+  transition: "background var(--vt-transition-fast), border-color var(--vt-transition-fast)",
 };
 
 const labelStyle: React.CSSProperties = {

@@ -545,7 +545,7 @@ function VizTweakInner() {
                 onChange={setPseudoState}
                 element={selectedElement}
               />
-              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0, margin: "2px 0" }} />
             </>
           )}
 
@@ -606,7 +606,7 @@ function VizTweakInner() {
                   </button>
                 </div>
               </div>
-              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0, margin: "2px 0" }} />
 
               {/* ─── Vision Simulation section ─── */}
               <div style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -636,18 +636,18 @@ function VizTweakInner() {
                   })}
                 </div>
               </div>
-              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0, margin: "2px 0" }} />
 
               <ClassEditor element={selectedElement} />
-              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0, margin: "2px 0" }} />
               <TokenExtractor element={selectedElement} />
-              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0, margin: "2px 0" }} />
               <DiffReporter diffEngine={diffEngine} />
-              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0, margin: "2px 0" }} />
               <ColorPalette />
-              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0, margin: "2px 0" }} />
               <AccessibilityChecker element={selectedElement} />
-              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0 }} />
+              <div style={{ height: "1px", background: "var(--vt-border)", flexShrink: 0, margin: "2px 0" }} />
               <CSSVarInspector element={selectedElement} />
             </div>
           ) : activeTab === "chat" ? (

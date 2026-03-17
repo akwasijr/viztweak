@@ -26,7 +26,8 @@ export const themeCSS = /* css */ `
   --vt-panel-width: 312px;
   --vt-panel-radius: 10px;
   --vt-panel-margin: 12px;
-  --vt-section-padding: 8px 12px;
+  --vt-section-padding: 10px 12px;
+  --vt-section-gap: 8px;
   --vt-row-gap: 4px;
   --vt-icon-size: 16px;
   --vt-icon-size-sm: 12px;
@@ -60,13 +61,13 @@ export const themeCSS = /* css */ `
 [${THEME_ATTR}][${THEME_MODE_ATTR}="dark"] {
   --vt-panel-bg: #1E1E1E;
   --vt-surface: #252525;
-  --vt-border: #383838;
+  --vt-border: rgba(255, 255, 255, 0.06);
   --vt-hover: #2E2E2E;
   --vt-text-primary: #E8E8E8;
   --vt-text-secondary: #8C8C8C;
   --vt-text-disabled: #5C5C5C;
-  --vt-input-bg: #2C2C2C;
-  --vt-input-border: #3A3A3A;
+  --vt-input-bg: #2A2A2A;
+  --vt-input-border: transparent;
   --vt-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
   --vt-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
   --vt-shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -76,16 +77,16 @@ export const themeCSS = /* css */ `
 [${THEME_ATTR}][${THEME_MODE_ATTR}="light"] {
   --vt-panel-bg: #FFFFFF;
   --vt-surface: #F5F5F5;
-  --vt-border: #E0E0E0;
+  --vt-border: rgba(0, 0, 0, 0.06);
   --vt-hover: #EBEBEB;
   --vt-text-primary: #1E1E1E;
   --vt-text-secondary: #6B6B6B;
   --vt-text-disabled: #A0A0A0;
-  --vt-input-bg: #FFFFFF;
-  --vt-input-border: #D4D4D4;
-  --vt-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --vt-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --vt-shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  --vt-input-bg: #F0F0F0;
+  --vt-input-border: transparent;
+  --vt-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --vt-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --vt-shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 [${THEME_ATTR}] *, [${THEME_ATTR}] *::before, [${THEME_ATTR}] *::after {
