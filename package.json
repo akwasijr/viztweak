@@ -1,6 +1,6 @@
 {
   "name": "viztweak",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Visual UI tweaker with MCP integration for AI coding agents",
   "type": "module",
   "main": "./dist/browser/index.js",

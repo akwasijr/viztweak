@@ -365,15 +365,6 @@ function VizTweakInner() {
             <div style={{ display: "flex", alignItems: "center", gap: "4px", minWidth: 0 }}>
               <span
                 style={{
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "50%",
-                  background: wsConnected ? "var(--vt-success)" : "var(--vt-error)",
-                  flexShrink: 0,
-                }}
-              />
-              <span
-                style={{
                   fontSize: "var(--vt-font-size-section)",
                   fontWeight: 600,
                   color: "var(--vt-text-primary)",
@@ -398,26 +389,47 @@ function VizTweakInner() {
                 </span>
               )}
             </div>
-            <button
-              onClick={handleClose}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "24px",
-                height: "24px",
-                border: "none",
-                background: "transparent",
-                cursor: "pointer",
-                color: "var(--vt-text-secondary)",
-                borderRadius: "var(--vt-input-radius)",
-                padding: 0,
-                flexShrink: 0,
-              }}
-              aria-label="Close panel"
-            >
-              <IconClose size={14} />
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "9px",
+                  color: "var(--vt-text-disabled)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: wsConnected ? "#15B467" : "#C4C4C4",
+                  flexShrink: 0,
+                }} />
+                {wsConnected ? "Agent" : "Offline"}
+              </span>
+              <button
+                onClick={handleClose}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "24px",
+                  height: "24px",
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  color: "var(--vt-text-secondary)",
+                  borderRadius: "var(--vt-input-radius)",
+                  padding: 0,
+                  flexShrink: 0,
+                }}
+                aria-label="Close panel"
+              >
+                <IconClose size={14} />
+              </button>
+            </div>
           </div>
 
           {/* ─── Tab Switcher (Design / Layers / Inspect) ─── */}
@@ -461,32 +473,7 @@ function VizTweakInner() {
               <CSSVarInspector element={selectedElement} />
             </div>
           ) : activeTab === "chat" ? (
-            <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-              {/* Connection status bar */}
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "8px 12px",
-                borderBottom: "1px solid var(--vt-border)",
-                flexShrink: 0,
-              }}>
-                <span style={{
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "50%",
-                  background: wsConnected ? "#15B467" : "#C4C4C4",
-                  flexShrink: 0,
-                }} />
-                <span style={{
-                  fontSize: "11px",
-                  fontFamily: "var(--vt-font)",
-                  color: "var(--vt-text-secondary)",
-                }}>
-                  {wsConnected ? "Agent connected" : "Agent offline"}
-                </span>
-              </div>
-
+            <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
               {/* Messages area */}
               <div
                 ref={chatScrollRef}
@@ -1004,17 +991,6 @@ function TabSwitcher({
       })}
 
       {/* Connection status as tiny dot on right */}
-      <div style={{ flex: 1 }} />
-      <span
-        style={{
-          width: "6px",
-          height: "6px",
-          borderRadius: "50%",
-          background: connected ? "#15B467" : "#C4C4C4",
-          flexShrink: 0,
-        }}
-        title={connected ? "Agent connected" : "Agent offline"}
-      />
     </div>
   );
 }
