@@ -42,7 +42,7 @@ export const themeCSS = /* css */ `
   /* ── Sizing ── */
   --vt-input-height: 24px;
   --vt-input-radius: 4px;
-  --vt-panel-width: 288px;
+  --vt-panel-width: 312px;
   --vt-panel-radius: 10px;
   --vt-panel-margin: 8px;
   --vt-section-padding: 8px 12px;

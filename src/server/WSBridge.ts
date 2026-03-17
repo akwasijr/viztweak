@@ -57,7 +57,7 @@ export class WSBridge {
     });
   }
 
-  private handleMessage(msg: WSMessage, _ws: WebSocket) {
+  private handleMessage(msg: WSMessage, ws: WebSocket) {
     switch (msg.type) {
       case "element_selected": {
         const payload = msg.payload as ElementSelectedPayload;
@@ -79,6 +79,13 @@ export class WSBridge {
         const payload = msg.payload as DesignerMessagePayload;
         this.store.addMessage(payload.text);
         console.error(`[viztweak] Designer message: "${payload.text}"`);
+        // Acknowledge receipt so the designer knows the message was received
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: "agent_status",
+            payload: { text: "Message received — waiting for agent to process.", type: "info" } satisfies AgentStatusPayload,
+          }));
+        }
         break;
       }
       case "ping": {
