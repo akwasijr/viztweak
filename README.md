@@ -99,6 +99,16 @@ This lets your agent pull changes directly instead of copy/paste. Add to your pr
 
 ---
 
+## Quick setup with AI
+
+Already using Copilot, Cursor, or Claude Code? Just paste this prompt and let your AI agent do the setup:
+
+> Add VizTweak to this project. Install the npm package `viztweak`, then add `<VizTweak />` to my root layout component. Also set up the MCP server by adding a viztweak entry to my MCP config with command `npx` and args `["-y", "viztweak"]`. The repo is https://github.com/akwasijr/viztweak if you need to check the README for details.
+
+Your agent will install the package, add the component, and configure the MCP connection automatically.
+
+---
+
 ## How to use it
 
 1. Open your app in the browser. You'll see a small pill in the bottom-right
