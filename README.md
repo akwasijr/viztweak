@@ -4,7 +4,19 @@
 
 A visual inspector that lives inside your React app. Select elements, adjust styles live, then paste the changes into Copilot, Cursor, or Claude Code. It writes the code for you.
 
-![version](https://img.shields.io/badge/version-0.9.5-blue) ![license](https://img.shields.io/badge/license-MIT-green)
+[![npm version](https://img.shields.io/npm/v/viztweak)](https://www.npmjs.com/package/viztweak) ![license](https://img.shields.io/badge/license-MIT-green)
+
+---
+
+## Quick setup with AI
+
+Already using Copilot, Cursor, or Claude Code? Just paste this prompt and let your agent do everything:
+
+> Add VizTweak to this project. Install the npm package `viztweak`, then add `<VizTweak />` to my root layout component. Also set up the MCP server by adding a viztweak entry to my MCP config with command `npx` and args `["-y", "viztweak"]`. The repo is https://github.com/akwasijr/viztweak if you need to check the README for details.
+
+Your agent will install the package, add the component, and configure the MCP connection automatically.
+
+Or follow the manual steps below.
 
 ---
 
@@ -77,7 +89,12 @@ function App() {
 
 ### 2. Connect your AI agent (optional)
 
-This lets your agent pull changes directly instead of copy/paste. Add to your project's MCP config:
+This lets your agent pull changes directly instead of copy/paste.
+
+<details open>
+<summary><strong>VS Code Copilot</strong></summary>
+
+Create `.vscode/mcp.json` in your project root:
 
 ```json
 {
@@ -89,23 +106,51 @@ This lets your agent pull changes directly instead of copy/paste. Add to your pr
   }
 }
 ```
+</details>
 
-| Tool | Where to add it |
-|------|----------------|
-| **GitHub Copilot CLI** | `.copilot/config.yml` or `.mcp.json` |
-| **Cursor** | Settings → MCP Servers → Add |
-| **Claude Code** | MCP configuration file |
-| **VS Code Copilot** | `.vscode/mcp.json` |
+<details>
+<summary><strong>GitHub Copilot CLI</strong></summary>
 
----
+Add to `.mcp.json` in your project root:
 
-## Quick setup with AI
+```json
+{
+  "mcpServers": {
+    "viztweak": {
+      "command": "npx",
+      "args": ["-y", "viztweak"]
+    }
+  }
+}
+```
+</details>
 
-Already using Copilot, Cursor, or Claude Code? Just paste this prompt and let your AI agent do the setup:
+<details>
+<summary><strong>Cursor</strong></summary>
 
-> Add VizTweak to this project. Install the npm package `viztweak`, then add `<VizTweak />` to my root layout component. Also set up the MCP server by adding a viztweak entry to my MCP config with command `npx` and args `["-y", "viztweak"]`. The repo is https://github.com/akwasijr/viztweak if you need to check the README for details.
+Go to **Settings → MCP Servers → Add** and enter:
 
-Your agent will install the package, add the component, and configure the MCP connection automatically.
+- **Name:** `viztweak`
+- **Command:** `npx`
+- **Args:** `-y`, `viztweak`
+</details>
+
+<details>
+<summary><strong>Claude Code</strong></summary>
+
+Add to your MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "viztweak": {
+      "command": "npx",
+      "args": ["-y", "viztweak"]
+    }
+  }
+}
+```
+</details>
 
 ---
 
